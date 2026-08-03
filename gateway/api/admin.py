@@ -84,6 +84,23 @@ async def get_usage(request: Request, hours: int = 24):
     return tracker.get_summary(since)
 
 
+@router.get("/cache")
+async def get_cache_stats(request: Request):
+    """Get cache statistics."""
+    _check_admin(request)
+    cache = request.app.state.cache
+    return cache.stats
+
+
+@router.post("/cache/clear")
+async def clear_cache(request: Request):
+    """Clear the response cache."""
+    _check_admin(request)
+    cache = request.app.state.cache
+    cache.clear()
+    return {"status": "cleared"}
+
+
 @router.get("/backends")
 async def list_backends(request: Request):
     """List all configured backends and their health."""

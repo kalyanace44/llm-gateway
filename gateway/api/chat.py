@@ -79,6 +79,14 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
     # Build payload (strip gateway-specific fields)
     payload = body.model_dump(exclude_none=True, exclude={"fallback", "cache"})
 
+    # Check cache (non-streaming only)
+    cache = app.state.cache
+    if body.cache and not body.stream:
+        messages_raw = [m.model_dump() for m in body.messages]
+        cached = cache.get(body.model, messages_raw)
+        if cached:
+            return cached
+
     start = time.time()
     ACTIVE_REQUESTS.labels(model=body.model).inc()
 
@@ -136,6 +144,12 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
             )
 
             ACTIVE_REQUESTS.labels(model=body.model).dec()
+
+            # Cache the response
+            if body.cache:
+                messages_raw = [m.model_dump() for m in body.messages]
+                cache.put(body.model, messages_raw, response)
+
             return response
 
     except BackendError as e:

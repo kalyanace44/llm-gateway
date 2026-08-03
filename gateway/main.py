@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from gateway.config import config, settings
 from gateway.core.auth import AuthManager
 from gateway.core.backends import Backend
+from gateway.core.cache import ResponseCache
 from gateway.core.costs import UsageTracker
 from gateway.core.limiter import RateLimiter
 from gateway.core.metrics import MetricsMiddleware, metrics_endpoint, update_backend_health
@@ -27,6 +28,10 @@ async def lifespan(app: FastAPI):
         default_tpm=config.rate_limits.tokens_per_minute,
     )
     app.state.tracker = UsageTracker()
+    app.state.cache = ResponseCache(
+        ttl=config.cache_ttl,
+        max_size=10_000,
+    )
     app.state.router = Router(backends, config)
 
     # Register a default key for dev
