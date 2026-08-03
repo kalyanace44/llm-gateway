@@ -10,6 +10,7 @@ from gateway.core.auth import AuthManager
 from gateway.core.backends import Backend
 from gateway.core.costs import UsageTracker
 from gateway.core.limiter import RateLimiter
+from gateway.core.metrics import MetricsMiddleware, metrics_endpoint, update_backend_health
 from gateway.core.router import Router
 
 
@@ -31,6 +32,10 @@ async def lifespan(app: FastAPI):
     # Register a default key for dev
     if settings.debug:
         app.state.auth_manager.register_key("dev-key", "development")
+
+    # Set initial backend health metrics
+    for b in backends:
+        update_backend_health(b.name, b.healthy)
 
     yield
 
@@ -54,6 +59,8 @@ from gateway.api.admin import router as admin_router
 app.include_router(chat_router)
 app.include_router(models_router)
 app.include_router(admin_router)
+app.add_middleware(MetricsMiddleware)
+app.add_route("/metrics", metrics_endpoint)
 
 
 @app.get("/health")

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from gateway.core.auth import APIKey
 from gateway.core.backends import BackendError
+from gateway.core.metrics import record_request, record_backend_error, ACTIVE_REQUESTS
 
 
 router = APIRouter()
@@ -79,6 +80,7 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
     payload = body.model_dump(exclude_none=True, exclude={"fallback", "cache"})
 
     start = time.time()
+    ACTIVE_REQUESTS.labels(model=body.model).inc()
 
     try:
         if body.stream:
@@ -90,6 +92,7 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
                 async for chunk in stream_gen:
                     yield chunk
 
+            ACTIVE_REQUESTS.labels(model=body.model).dec()
             return StreamingResponse(
                 stream_wrapper(),
                 media_type="text/event-stream",
@@ -121,10 +124,24 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
             cost = tracker.calculate_cost(body.model, actual_input, output_tokens)
             auth_mgr.record_usage(api_key, cost)
 
+            # Record Prometheus metrics
+            record_request(
+                model=body.model,
+                backend=backend.name,
+                api_key_hash=api_key.key_hash,
+                input_tokens=actual_input,
+                output_tokens=output_tokens,
+                latency_seconds=(time.time() - start),
+                cost_usd=cost,
+            )
+
+            ACTIVE_REQUESTS.labels(model=body.model).dec()
             return response
 
     except BackendError as e:
+        ACTIVE_REQUESTS.labels(model=body.model).dec()
         latency_ms = (time.time() - start) * 1000
+        record_backend_error("unknown", "5xx" if e.status_code >= 500 else "client")
         tracker.record(
             api_key_hash=api_key.key_hash,
             model=body.model,

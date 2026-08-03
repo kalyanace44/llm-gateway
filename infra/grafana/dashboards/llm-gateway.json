@@ -1,0 +1,111 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Requests / min",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(rate(llm_gateway_requests_total[1m])) * 60", "legendFormat": "rpm"}],
+      "fieldConfig": {"defaults": {"unit": "reqpm"}}
+    },
+    {
+      "title": "Active Requests",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "targets": [{"expr": "sum(llm_gateway_active_requests)", "legendFormat": "active"}]
+    },
+    {
+      "title": "Total Cost (24h)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "targets": [{"expr": "sum(increase(llm_gateway_cost_usd_total[24h]))", "legendFormat": "USD"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}}
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "targets": [{"expr": "sum(rate(llm_gateway_backend_errors_total[5m])) / sum(rate(llm_gateway_requests_total[5m])) * 100", "legendFormat": "%"}],
+      "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"value": 0, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 5, "color": "red"}]}}}
+    },
+    {
+      "title": "Backend Health",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "targets": [{"expr": "llm_gateway_backend_healthy", "legendFormat": "{{backend}}"}],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}]}}
+    },
+    {
+      "title": "Tokens / sec",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "targets": [{"expr": "sum(rate(llm_gateway_tokens_total[1m]))", "legendFormat": "tok/s"}]
+    },
+    {
+      "title": "Request Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(llm_gateway_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50"},
+        {"expr": "histogram_quantile(0.95, sum(rate(llm_gateway_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
+        {"expr": "histogram_quantile(0.99, sum(rate(llm_gateway_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "title": "Tokens per Second by Model",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [
+        {"expr": "sum(rate(llm_gateway_tokens_total{direction=\"output\"}[1m])) by (model)", "legendFormat": "{{model}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "tok/s"}}
+    },
+    {
+      "title": "Cost per Model (cumulative)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "targets": [
+        {"expr": "sum(increase(llm_gateway_cost_usd_total[1h])) by (model)", "legendFormat": "{{model}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}}
+    },
+    {
+      "title": "Requests by Status Code",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "targets": [
+        {"expr": "sum(rate(llm_gateway_requests_total[5m])) by (status_code)", "legendFormat": "{{status_code}}"}
+      ]
+    },
+    {
+      "title": "Time to First Token (TTFT)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(llm_gateway_ttft_seconds_bucket[5m])) by (le))", "legendFormat": "p50"},
+        {"expr": "histogram_quantile(0.95, sum(rate(llm_gateway_ttft_seconds_bucket[5m])) by (le))", "legendFormat": "p95"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "title": "Backend Errors by Type",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "targets": [
+        {"expr": "sum(rate(llm_gateway_backend_errors_total[5m])) by (backend, error_type)", "legendFormat": "{{backend}} - {{error_type}}"}
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["llm", "gateway", "ai"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "LLM Gateway",
+  "uid": "llm-gateway-main"
+}
