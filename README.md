@@ -8,45 +8,9 @@ A production-grade LLM gateway that routes, observes, and controls multi-model i
 
 ## Architecture
 
-```
-                              ┌─────────────────────────────────────────────┐
-                              │            LLM Gateway (FastAPI)             │
-                              │                                             │
-                              │  ┌─────────┐  ┌──────────┐  ┌───────────┐  │
-   Clients ──────────────────▶│  │  Auth   │─▶│  Router  │─▶│ Backends  │  │
-   (OpenAI SDK compatible)    │  │ (keys)  │  │ (A/B+FB) │  │ (adapters)│  │
-                              │  └─────────┘  └──────────┘  └─────┬─────┘  │
-                              │       │                           │         │
-                              │  ┌────▼────┐  ┌──────────┐       │         │
-                              │  │  Rate   │  │  Cache   │       │         │
-                              │  │ Limiter │  │ (dedup)  │       │         │
-                              │  └─────────┘  └──────────┘       │         │
-                              │       │                           │         │
-                              │  ┌────▼────────────────────┐     │         │
-                              │  │    Cost Tracker          │     │         │
-                              │  │ (tokens, USD, per-key)   │     │         │
-                              │  └──────────────────────────┘     │         │
-                              │       │                           │         │
-                              │  ┌────▼────────────────────┐     │         │
-                              │  │   Prometheus Metrics     │     │         │
-                              │  │ (latency, TTFT, tok/s)   │     │         │
-                              │  └──────────────────────────┘     │         │
-                              └───────────────────────────────────┼─────────┘
-                                                                  │
-                              ┌────────────────────────────────────┼─────────┐
-                              │          Model Backends            │         │
-                              │                                    ▼         │
-                              │  ┌─────────┐  ┌─────────┐  ┌───────────┐   │
-                              │  │  vLLM   │  │ OpenAI  │  │ Anthropic │   │
-                              │  │ (GPU)   │  │  (API)  │  │   (API)   │   │
-                              │  └─────────┘  └─────────┘  └───────────┘   │
-                              │                                             │
-                              │  ┌─────────┐  ┌─────────┐                  │
-                              │  │ Ollama  │  │ Custom  │                  │
-                              │  │ (local) │  │ (any)   │                  │
-                              │  └─────────┘  └─────────┘                  │
-                              └─────────────────────────────────────────────┘
-```
+![LLM Gateway Architecture](docs/architecture.svg)
+
+*Animated SVG — open in browser to see request flow animation*
 
 ## Features
 
