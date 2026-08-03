@@ -67,12 +67,14 @@ from gateway.api.models import router as models_router
 from gateway.api.admin import router as admin_router
 from gateway.api.tenants import router as tenants_router
 from gateway.api.memory import router as memory_router
+from gateway.api.rag import router as rag_router
 
 app.include_router(chat_router)
 app.include_router(models_router)
 app.include_router(admin_router)
 app.include_router(tenants_router)
 app.include_router(memory_router)
+app.include_router(rag_router)
 app.add_middleware(MetricsMiddleware)
 app.add_route("/metrics", metrics_endpoint)
 
