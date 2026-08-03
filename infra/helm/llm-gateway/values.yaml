@@ -1,0 +1,139 @@
+# LLM Gateway Helm Values
+
+replicaCount: 2
+
+image:
+  repository: llm-gateway
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: llm-gateway.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  # Scale on queue depth / active requests
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: llm_gateway_active_requests
+        target:
+          type: AverageValue
+          averageValue: "5"
+
+# Gateway config
+gateway:
+  debug: false
+  adminKey: "change-me-in-production"
+  configYaml: |
+    backends:
+      - name: vllm-cluster
+        provider: openai
+        base_url: "http://vllm-service:8000/v1"
+        api_key: ""
+        models:
+          - "meta-llama/Llama-3.1-70B-Instruct"
+          - "meta-llama/Llama-3.1-8B-Instruct"
+        max_concurrent: 100
+        timeout: 120
+        weight: 1.0
+        priority: 10
+      - name: openai-fallback
+        provider: openai
+        base_url: "https://api.openai.com/v1"
+        api_key: "${OPENAI_API_KEY}"
+        models:
+          - "gpt-4o"
+          - "gpt-4o-mini"
+        max_concurrent: 50
+        timeout: 60
+        weight: 0.0
+        priority: 5
+    rate_limits:
+      requests_per_minute: 120
+      tokens_per_minute: 500000
+    default_model: "meta-llama/Llama-3.1-70B-Instruct"
+    fallback_chain:
+      - vllm-cluster
+      - openai-fallback
+    cache_enabled: true
+    cache_ttl: 3600
+
+# Redis subchart
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# Prometheus subchart
+prometheus:
+  enabled: true
+  server:
+    retention: "7d"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  alertmanager:
+    enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
+  serverFiles:
+    prometheus.yml:
+      scrape_configs:
+        - job_name: llm-gateway
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_app]
+              regex: llm-gateway
+              action: keep
+
+# Grafana subchart
+grafana:
+  enabled: true
+  adminPassword: "admin"
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://{{ .Release.Name }}-prometheus-server
+          isDefault: true
+  dashboardsConfigMaps:
+    default: "llm-gateway-dashboards"

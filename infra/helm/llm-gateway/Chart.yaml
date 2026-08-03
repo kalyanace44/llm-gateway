@@ -1,0 +1,20 @@
+apiVersion: v2
+name: llm-gateway
+description: Production LLM Gateway — multi-model routing, cost tracking, observability
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: redis
+    version: "~18.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: prometheus
+    version: "~25.x"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled
+  - name: grafana
+    version: "~8.x"
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
