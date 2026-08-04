@@ -35,6 +35,7 @@ async def init_db():
     """Create all tables (dev/test only — use Alembic in production)."""
     from gateway.db.models import Base
     from gateway.db import rag_models  # noqa: F401 — register RAG tables
+    from gateway.db import deploy_models  # noqa: F401 — register deploy tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

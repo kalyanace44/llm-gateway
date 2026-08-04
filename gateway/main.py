@@ -75,6 +75,7 @@ from gateway.api.tenants import router as tenants_router
 from gateway.api.memory import router as memory_router
 from gateway.api.rag import router as rag_router
 from gateway.api.health import router as health_router
+from gateway.api.deploy import router as deploy_router
 
 app.include_router(chat_router)
 app.include_router(models_router)
@@ -83,6 +84,7 @@ app.include_router(tenants_router)
 app.include_router(memory_router)
 app.include_router(rag_router)
 app.include_router(health_router)
+app.include_router(deploy_router)
 app.add_middleware(MetricsMiddleware)
 app.add_route("/metrics", metrics_endpoint)
 
