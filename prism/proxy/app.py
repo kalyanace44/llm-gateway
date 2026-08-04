@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
     from prism.cache.store import CacheStore
     from prism.auth.keys import KeyManager
     from prism.observe.metrics import MetricsCollector
+    from prism_cloud.scanner import SecurityScanner
 
     cfg: PrismConfig = app.state.config
 
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI):
     app.state.cache = CacheStore(cfg.cache)
     app.state.keys = KeyManager(cfg)
     app.state.metrics = MetricsCollector()
+    app.state.scanner = SecurityScanner()
 
     # Register providers with circuit breakers
     for provider in cfg.providers:

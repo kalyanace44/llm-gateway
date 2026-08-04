@@ -51,7 +51,29 @@ async def chat_completions(body: ChatRequest, request: Request):
     if not keys.check_rate_limit(key_info):
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
-    # 2. Cache check
+    # 2. Security scan (PII + prompt injection)
+    scanner = getattr(request.app.state, "scanner", None)
+    if scanner:
+        messages_raw = [m.model_dump() for m in body.messages]
+        scan_result = scanner.scan_messages(messages_raw)
+        if scan_result.action.value == "block":
+            raise HTTPException(
+                status_code=451,
+                detail={
+                    "error": "Request blocked by security scanner",
+                    "findings": scan_result.findings,
+                    "request_id": request_id,
+                },
+            )
+        elif scan_result.action.value == "redact":
+            # Replace message content with redacted versions
+            for msg in body.messages:
+                if msg.content:
+                    redacted = scanner.scan(msg.content)
+                    if redacted.redacted_content:
+                        msg.content = redacted.redacted_content
+
+    # 3. Cache check
     cache: "CacheStore" = request.app.state.cache
     if body.prism_cache and not body.stream:
         cached = cache.get(body.model, body.messages)
@@ -61,7 +83,7 @@ async def chat_completions(body: ChatRequest, request: Request):
             cached["_prism"] = {"request_id": request_id, "cached": True}
             return cached
 
-    # 3. Route to provider with resilience
+    # 4. Route to provider with resilience
     router_svc: "Router" = request.app.state.router
     breakers: "CircuitBreakerRegistry" = request.app.state.breakers
     metrics: "MetricsCollector" = request.app.state.metrics
