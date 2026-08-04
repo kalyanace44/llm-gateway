@@ -1,0 +1,56 @@
+{
+  "title": "AI Operations Platform — Architecture",
+  "subtitle": "Multi-tenant LLM Gateway with RAG, Self-Healing, Deployment Pipeline, Experiment Tracking",
+  "footer": "github.com/kalyanace44/llm-gateway | 58 API routes | 5 production modules",
+  "canvas": {"w": 1480, "h": 920},
+  "nodes": [
+    {"id": "client",      "x": 80,   "y": 430, "icon": "tile:lark",     "label": "Client",          "sub": "SDK / HTTP"},
+    {"id": "gateway",     "x": 310,  "y": 430, "icon": "apigateway",    "label": "FastAPI Gateway",  "sub": "Uvicorn + ASGI"},
+    {"id": "auth",        "x": 550,  "y": 430, "icon": "iam",           "label": "Auth + Limits",    "sub": "API Key + Token Bucket"},
+    {"id": "router",      "x": 790,  "y": 430, "icon": "tile:gateway",  "label": "Smart Router",     "sub": "A/B + Fallback"},
+    {"id": "vllm",        "x": 1080, "y": 350, "icon": "sagemaker",     "label": "vLLM / Local",     "sub": "GPU Inference"},
+    {"id": "cloud",       "x": 1080, "y": 520, "icon": "bedrock",       "label": "Cloud LLMs",       "sub": "OpenAI / Claude / Bedrock"},
+    {"id": "prometheus",  "x": 310,  "y": 190, "icon": "cloudwatch",    "label": "Observability",    "sub": "Prometheus + Grafana"},
+    {"id": "healing",     "x": 650,  "y": 190, "icon": "guardduty",     "label": "Self-Healing",     "sub": "Circuit Breakers"},
+    {"id": "experiments", "x": 1000, "y": 190, "icon": "xray",          "label": "Experiments",      "sub": "A/B Test + z-test"},
+    {"id": "cache",       "x": 310,  "y": 700, "icon": "dynamodb",      "label": "Response Cache",   "sub": "LRU + TTL"},
+    {"id": "memory",      "x": 550,  "y": 700, "icon": "rds",           "label": "Persistent Memory","sub": "Conversations + Recall"},
+    {"id": "rag",         "x": 790,  "y": 700, "icon": "opensearch",    "label": "RAG Engine",       "sub": "Vector + BM25 Hybrid"},
+    {"id": "registry",    "x": 1080, "y": 700, "icon": "ecr",           "label": "Model Registry",   "sub": "Canary + Rollback"}
+  ],
+  "groups": [
+    {"kind": "region", "x": 180, "y": 80, "w": 1220, "h": 790, "label": "AI Operations Platform", "lx": 200, "ly": 100},
+    {"kind": "event",  "x": 220, "y": 130, "w": 880,  "h": 120, "label": "Control Plane", "lx": 240, "ly": 155},
+    {"kind": "subnet", "x": 220, "y": 635, "w": 960,  "h": 130, "label": "Data Layer", "lx": 240, "ly": 655}
+  ],
+  "edges": [
+    {"from": "client",  "fs": "r", "to": "gateway",  "ts": "l", "flow": "request", "label": "HTTPS", "lxy": [195, 418]},
+    {"from": "gateway", "fs": "r", "to": "auth",     "ts": "l", "flow": "request"},
+    {"from": "auth",    "fs": "r", "to": "router",   "ts": "l", "flow": "request"},
+    {"from": "router",  "fs": "r", "to": "vllm",     "ts": "l", "flow": "request", "mids": [[950, 430], [950, 350]], "label": "route", "lxy": [950, 335]},
+    {"from": "router",  "fs": "r", "to": "cloud",    "ts": "l", "flow": "request", "mids": [[970, 430], [970, 520]], "label": "fallback", "lxy": [970, 535]},
+    {"from": "gateway", "fs": "b", "to": "cache",    "ts": "t", "flow": "tool", "label": "cache hit?", "lxy": [310, 575]},
+    {"from": "auth",    "fs": "b", "to": "memory",   "ts": "t", "flow": "tool", "label": "store", "lxy": [550, 575]},
+    {"from": "router",  "fs": "b", "to": "rag",      "ts": "t", "flow": "tool", "label": "retrieve", "lxy": [790, 575]},
+    {"from": "router",  "fs": "t", "to": "healing",  "ts": "b", "flow": "ambient", "mids": [[790, 320], [650, 320]], "label": "health", "lxy": [720, 308]},
+    {"from": "healing", "fs": "r", "to": "experiments", "ts": "l", "flow": "schedule", "label": "variant assign", "lxy": [825, 178]},
+    {"from": "gateway", "fs": "t", "to": "prometheus","ts": "b", "flow": "ambient", "label": "/metrics", "lxy": [310, 320]},
+    {"from": "experiments", "fs": "b", "to": "vllm",  "ts": "t", "flow": "schedule", "mids": [[1000, 300], [1080, 300]], "label": "traffic split", "lxy": [1040, 288]},
+    {"from": "registry","fs": "t", "to": "cloud",    "ts": "b", "flow": "schedule", "label": "promote", "lxy": [1080, 610]},
+    {"from": "healing", "fs": "l", "to": "prometheus", "ts": "r", "flow": "ambient", "static": true}
+  ],
+  "journeys": [
+    {"flow": "request", "dur": 3.0, "hops": [["client","gateway"],["gateway","auth"],["auth","router"],["router","vllm"]]},
+    {"flow": "request", "dur": 3.5, "hops": [["client","gateway"],["gateway","auth"],["auth","router"],["router","cloud"]]},
+    {"flow": "tool",    "dur": 2.0, "hops": [["gateway","cache"],["router","rag"]]},
+    {"flow": "schedule","dur": 2.8, "hops": [["healing","experiments"],["experiments","vllm"]]},
+    {"flow": "ambient", "dur": 2.4, "hops": [["gateway","prometheus"],["router","healing"]]}
+  ],
+  "steps": [
+    ["client", "gateway", 1],
+    ["gateway", "auth", 2],
+    ["auth", "router", 3]
+  ],
+  "legend": ["request", "tool", "schedule", "ambient"],
+  "legendY": 860
+}
