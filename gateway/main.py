@@ -10,6 +10,7 @@ from gateway.core.auth import AuthManager
 from gateway.core.backends import Backend
 from gateway.core.cache import ResponseCache
 from gateway.core.costs import UsageTracker
+from gateway.core.healing import SelfHealingManager
 from gateway.core.limiter import RateLimiter
 from gateway.core.metrics import MetricsMiddleware, metrics_endpoint, update_backend_health
 from gateway.core.router import Router
@@ -36,7 +37,12 @@ async def lifespan(app: FastAPI):
         ttl=config.cache_ttl,
         max_size=10_000,
     )
+    app.state.healer = SelfHealingManager()
     app.state.router = Router(backends, config)
+
+    # Register backends with self-healing
+    for b in backends:
+        app.state.healer.register_backend(b.name)
 
     # Register a default key for dev
     if settings.debug:
@@ -68,6 +74,7 @@ from gateway.api.admin import router as admin_router
 from gateway.api.tenants import router as tenants_router
 from gateway.api.memory import router as memory_router
 from gateway.api.rag import router as rag_router
+from gateway.api.health import router as health_router
 
 app.include_router(chat_router)
 app.include_router(models_router)
@@ -75,6 +82,7 @@ app.include_router(admin_router)
 app.include_router(tenants_router)
 app.include_router(memory_router)
 app.include_router(rag_router)
+app.include_router(health_router)
 app.add_middleware(MetricsMiddleware)
 app.add_route("/metrics", metrics_endpoint)
 

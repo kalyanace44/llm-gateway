@@ -143,6 +143,10 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
                 cost_usd=cost,
             )
 
+            # Record self-healing metrics
+            healer = app.state.healer
+            healer.record_success(backend.name, time.time() - start)
+
             ACTIVE_REQUESTS.labels(model=body.model).dec()
 
             # Cache the response
@@ -156,6 +160,11 @@ async def chat_completions(body: ChatCompletionRequest, request: Request):
         ACTIVE_REQUESTS.labels(model=body.model).dec()
         latency_ms = (time.time() - start) * 1000
         record_backend_error("unknown", "5xx" if e.status_code >= 500 else "client")
+
+        # Record failure in self-healing
+        healer = app.state.healer
+        healer.record_failure("unknown", latency=time.time() - start, error=e.message)
+
         tracker.record(
             api_key_hash=api_key.key_hash,
             model=body.model,
