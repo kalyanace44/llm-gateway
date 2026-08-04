@@ -36,6 +36,7 @@ async def init_db():
     from gateway.db.models import Base
     from gateway.db import rag_models  # noqa: F401 — register RAG tables
     from gateway.db import deploy_models  # noqa: F401 — register deploy tables
+    from gateway.db import experiment_models  # noqa: F401 — register experiment tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
