@@ -1,7 +1,7 @@
 [project]
-name = "llm-gateway"
+name = "prism-gateway"
 version = "0.1.0"
-description = "Production LLM Gateway — multi-model routing, cost tracking, observability"
+description = "Prism — AI Traffic Control Plane. Route, protect, optimize, observe."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
@@ -9,18 +9,12 @@ dependencies = [
     "httpx>=0.28.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
-    "redis>=5.2.0",
     "pyyaml>=6.0",
     "tiktoken>=0.8.0",
     "prometheus-client>=0.21.0",
     "opentelemetry-api>=1.29.0",
     "opentelemetry-sdk>=1.29.0",
     "sse-starlette>=2.2.0",
-    "sqlalchemy[asyncio]>=2.0.36",
-    "asyncpg>=0.30.0",
-    "pgvector>=0.3.6",
-    "alembic>=1.14.0",
-    "aiosqlite>=0.20.0",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +24,17 @@ dev = [
     "httpx>=0.28.0",
     "ruff>=0.8.0",
 ]
+# Legacy gateway modules (Phase 1-5)
+legacy = [
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "pgvector>=0.3.6",
+    "alembic>=1.14.0",
+    "aiosqlite>=0.20.0",
+]
+
+[project.scripts]
+prism = "prism.cli:main"
 
 [tool.ruff]
 line-length = 100
@@ -37,3 +42,10 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["prism*", "gateway*"]

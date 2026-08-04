@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prism-gateway
+  labels:
+    app: prism
+    component: gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: prism
+      component: gateway
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: prism
+        component: gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: prism
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: prism
+          image: prism-gateway:latest
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: PRISM_CONFIG
+              value: /etc/prism/prism.yaml
+            - name: PRISM_ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: prism-secrets
+                  key: admin-key
+          envFrom:
+            - secretRef:
+                name: prism-provider-keys
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prism
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: prism-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prism-gateway
+  labels:
+    app: prism
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: prism
+    component: gateway
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: prism-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: prism-gateway
+  minReplicas: 2
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Pods
+      pods:
+        metric:
+          name: prism_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "100"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 5
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: prism-gateway
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: prism
+      component: gateway
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prism
+  labels:
+    app: prism
