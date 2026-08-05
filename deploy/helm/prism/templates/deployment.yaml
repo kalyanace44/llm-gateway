@@ -37,7 +37,7 @@ spec:
             - name: PRISM_LOG_LEVEL
               value: {{ .Values.gateway.env.LOG_LEVEL }}
             - name: REDIS_URL
-              value: redis://{{ include "prism.fullname" . }}-redis:6379
+              value: redis://{{ .Release.Name }}-redis-master:6379
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:

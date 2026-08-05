@@ -1,8 +1,12 @@
-# ─── Prism AI Traffic Control Plane ───────────────────────────────
-# helm install prism ./deploy/helm/prism -f values.yaml
-# ONE FILE controls your entire deployment.
+# ═══════════════════════════════════════════════════════════════════
+# Prism — AI Traffic Control Plane
+# ═══════════════════════════════════════════════════════════════════
+# helm install prism ./deploy/helm/prism \
+#   --set secrets.openaiApiKey=sk-... \
+#   --set secrets.anthropicApiKey=sk-ant-...
+# ═══════════════════════════════════════════════════════════════════
 
-# ─── Gateway ─────────────────────────────────────────────────────
+# ─── Gateway (our code — only thing we template ourselves) ────────
 gateway:
   replicaCount: 2
   image:
@@ -67,10 +71,10 @@ config:
   cache_enabled: true
   cache_ttl: 3600
 
-  # PII Scanner (fintech compliance)
+  # PII Scanner (RBI compliance)
   scanner:
     enabled: true
-    action: block          # block | redact | log
+    action: block
     rules:
       - name: pan_card
         pattern: '[A-Z]{5}[0-9]{4}[A-Z]'
@@ -79,65 +83,11 @@ config:
       - name: credit_card
         pattern: '\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b'
 
-# ─── Secrets (API keys — set via --set or external secret) ───────
+# ─── Secrets ─────────────────────────────────────────────────────
 secrets:
-  openaiApiKey: ""         # --set secrets.openaiApiKey=sk-...
-  anthropicApiKey: ""      # --set secrets.anthropicApiKey=sk-ant-...
-  adminKey: "admin-secret" # Gateway admin key
-
-# ─── Redis (cache + rate limiting) ───────────────────────────────
-redis:
-  enabled: true
-  image:
-    repository: redis
-    tag: "7-alpine"
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 250m
-      memory: 256Mi
-  persistence:
-    enabled: true
-    size: 1Gi
-  maxmemory: "256mb"
-
-# ─── Prometheus (metrics scraping) ───────────────────────────────
-prometheus:
-  enabled: true
-  image:
-    repository: prom/prometheus
-    tag: "latest"
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  persistence:
-    enabled: true
-    size: 5Gi
-  scrapeInterval: 15s
-
-# ─── Grafana (dashboards) ────────────────────────────────────────
-grafana:
-  enabled: true
-  image:
-    repository: grafana/grafana
-    tag: "latest"
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 250m
-      memory: 256Mi
-  adminPassword: "admin"
-  persistence:
-    enabled: true
-    size: 1Gi
+  openaiApiKey: ""
+  anthropicApiKey: ""
+  adminKey: "admin-secret"
 
 # ─── Ingress ─────────────────────────────────────────────────────
 ingress:
@@ -150,5 +100,99 @@ ingress:
 
 # ─── Service ─────────────────────────────────────────────────────
 service:
-  type: ClusterIP          # ClusterIP | LoadBalancer | NodePort
+  type: ClusterIP
   port: 8000
+
+# ═══════════════════════════════════════════════════════════════════
+# SUB-CHART CONFIGURATION
+# These configure official community Helm charts pulled as dependencies.
+# Same pattern as kube-prometheus-stack, cert-manager, istio.
+# ═══════════════════════════════════════════════════════════════════
+
+# ─── Redis (Bitnami) ─────────────────────────────────────────────
+# https://github.com/bitnami/charts/tree/main/bitnami/redis
+redis:
+  enabled: true
+  architecture: standalone       # standalone | replication
+  auth:
+    enabled: false               # No password for dev; enable in prod
+  master:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    persistence:
+      enabled: true
+      size: 1Gi
+  # Override the generated Redis URL in gateway env
+  # Gateway connects to: redis://prism-redis-master:6379
+
+# ─── Grafana (Official) ──────────────────────────────────────────
+# https://github.com/grafana/helm-charts/tree/main/charts/grafana
+grafana:
+  enabled: true
+  adminPassword: admin
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prism-prometheus-server:80
+          access: proxy
+          isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          folder: Prism
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+# ─── Prometheus (Community) ───────────────────────────────────────
+# https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus
+prometheus:
+  enabled: true
+  server:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    persistentVolume:
+      enabled: true
+      size: 5Gi
+    global:
+      scrape_interval: 15s
+  # Scrape the Prism gateway /metrics endpoint
+  extraScrapeConfigs: |
+    - job_name: prism-gateway
+      static_configs:
+        - targets: ["prism-prism:8000"]
+      metrics_path: /metrics
+  # Disable components we don't need
+  alertmanager:
+    enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false

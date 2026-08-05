@@ -4,15 +4,43 @@ description: Prism — AI Traffic Control Plane. Route, protect, optimize, obser
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
+kubeVersion: ">=1.25.0-0"
 keywords:
   - llm
   - gateway
   - ai
   - proxy
   - observability
+  - fintech
 home: https://kalyanace44.github.io/llm-gateway/
 sources:
   - https://github.com/kalyanace44/llm-gateway
 maintainers:
   - name: kalyan
     email: kalyanace44@users.noreply.github.com
+annotations:
+  "artifacthub.io/license": Apache-2.0
+  "artifacthub.io/links": |
+    - name: Documentation
+      url: https://kalyanace44.github.io/llm-gateway/
+    - name: Source
+      url: https://github.com/kalyanace44/llm-gateway
+
+# ─── Sub-chart Dependencies ──────────────────────────────────────
+# Official community charts — we only write templates for OUR gateway.
+# Everything else is a dependency we configure via values.yaml.
+dependencies:
+  - name: redis
+    version: "19.*"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+
+  - name: grafana
+    version: "8.*"
+    repository: https://grafana.github.io/helm-charts
+    condition: grafana.enabled
+
+  - name: prometheus
+    version: "25.*"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: prometheus.enabled

@@ -1,0 +1,2 @@
+# Downloaded sub-chart tarballs (regenerated via `helm dependency update`)
+charts/*.tgz

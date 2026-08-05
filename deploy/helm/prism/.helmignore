@@ -1,0 +1,5 @@
+# Helm ignore — exclude from packaging
+.git
+.gitignore
+.helmignore
+
