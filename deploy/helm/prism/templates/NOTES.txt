@@ -1,0 +1,40 @@
+
+═══════════════════════════════════════════════════════════════════
+  🔺 Prism — AI Traffic Control Plane
+═══════════════════════════════════════════════════════════════════
+
+  Deployed: {{ .Release.Name }} (namespace: {{ .Release.Namespace }})
+
+  ─── Endpoints ────────────────────────────────────────────────
+  Gateway API:   http://{{ include "prism.fullname" . }}:{{ .Values.service.port }}
+{{- if .Values.prometheus.enabled }}
+  Prometheus:    http://{{ include "prism.fullname" . }}-prometheus:9090
+{{- end }}
+{{- if .Values.grafana.enabled }}
+  Grafana:       http://{{ include "prism.fullname" . }}-grafana:3000
+{{- end }}
+
+  ─── Quick Start ──────────────────────────────────────────────
+  # Port-forward the gateway:
+  kubectl port-forward svc/{{ include "prism.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+
+  # Test health:
+  curl http://localhost:{{ .Values.service.port }}/health
+
+  # Send a request:
+  curl http://localhost:{{ .Values.service.port }}/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"hello"}]}'
+
+{{- if .Values.grafana.enabled }}
+  # Port-forward Grafana:
+  kubectl port-forward svc/{{ include "prism.fullname" . }}-grafana 3000:3000
+  # Open: http://localhost:3000 (admin/{{ .Values.grafana.adminPassword }})
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+  ─── Ingress ──────────────────────────────────────────────────
+  URL: https://{{ .Values.ingress.host }}
+{{- end }}
+
+═══════════════════════════════════════════════════════════════════
