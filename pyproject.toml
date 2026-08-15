@@ -3,6 +3,20 @@ name = "prism-gateway"
 version = "0.1.0"
 description = "Prism — AI Traffic Control Plane. Route, protect, optimize, observe."
 requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+readme = "README.md"
+authors = [{name = "Kalyan", email = "kalyanace44@users.noreply.github.com"}]
+keywords = ["llm", "gateway", "ai", "proxy", "openai", "anthropic", "routing", "fintech"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
@@ -16,6 +30,13 @@ dependencies = [
     "opentelemetry-sdk>=1.29.0",
     "sse-starlette>=2.2.0",
 ]
+
+[project.urls]
+Homepage = "https://kalyanace44.github.io/llm-gateway/"
+Repository = "https://github.com/kalyanace44/llm-gateway"
+Issues = "https://github.com/kalyanace44/llm-gateway/issues"
+Documentation = "https://kalyanace44.github.io/llm-gateway/"
+"Helm Chart" = "https://kalyanace44.github.io/llm-gateway/charts"
 
 [project.optional-dependencies]
 dev = [
