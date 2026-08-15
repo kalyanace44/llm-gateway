@@ -68,9 +68,11 @@ def create_app(config: PrismConfig | None = None) -> FastAPI:
 
     # Routes
     from prism.proxy.routes import chat, models, health, admin
+    from prism.dashboard import router as dashboard_router
     app.include_router(chat.router)
     app.include_router(models.router)
     app.include_router(health.router)
     app.include_router(admin.router)
+    app.include_router(dashboard_router)
 
     return app

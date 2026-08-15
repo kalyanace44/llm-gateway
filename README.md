@@ -73,6 +73,12 @@ providers:
     models: [claude-sonnet-4-20250514, claude-haiku-3]
     priority: 1
 
+  - name: kiro
+    base_url: http://localhost:8000/v1
+    api_key: ${KIRO_API_KEY}
+    models: [auto]
+    priority: 2
+
 rate_limit:
   requests_per_minute: 600
   tokens_per_minute: 1000000
@@ -194,7 +200,7 @@ Works with: OpenAI SDK, LangChain, LlamaIndex, CrewAI, Haystack, or any OpenAI-c
 | Feature | Description |
 |---------|-------------|
 | **OpenAI-compatible API** | Drop-in `/v1/chat/completions`, `/v1/models`, `/v1/embeddings` |
-| **10+ Provider Support** | OpenAI, Anthropic, Google Gemini, Azure OpenAI, AWS Bedrock, Mistral, Groq, Together, Fireworks, vLLM/Ollama |
+| **10+ Provider Support** | OpenAI, Anthropic, Google Gemini, Azure OpenAI, AWS Bedrock, Mistral, Groq, Together, Fireworks, Kiro, vLLM/Ollama |
 | **Smart Routing** | Priority-based, weighted load balancing, least-latency, cost-optimized |
 | **Circuit Breakers** | Per-provider failure isolation, auto-recovery (closed → open → half-open) |
 | **Semantic Caching** | Embedding-based similarity matching — "How do I deploy?" hits cache for "What's the deployment process?" |

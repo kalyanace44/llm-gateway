@@ -307,6 +307,12 @@ class TestHealthEndpoints:
         assert r.status_code == 200
         assert "prism_requests_total" in r.text
 
+    def test_dashboard(self, client):
+        r = client.get("/dashboard")
+        assert r.status_code == 200
+        assert "Prism Dashboard" in r.text
+        assert "text/html" in r.headers["content-type"]
+
 
 class TestAdminEndpoints:
     def test_register_key(self, client):
