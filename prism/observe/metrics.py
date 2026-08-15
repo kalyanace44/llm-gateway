@@ -96,17 +96,17 @@ class MetricsCollector:
     def prometheus_text(self) -> str:
         """Export metrics in Prometheus text format."""
         lines = []
-        lines.append(f"# HELP prism_requests_total Total requests proxied")
-        lines.append(f"# TYPE prism_requests_total counter")
+        lines.append("# HELP prism_requests_total Total requests proxied")
+        lines.append("# TYPE prism_requests_total counter")
         lines.append(f"prism_requests_total {self._total_requests}")
-        lines.append(f"# HELP prism_errors_total Total errors")
-        lines.append(f"# TYPE prism_errors_total counter")
+        lines.append("# HELP prism_errors_total Total errors")
+        lines.append("# TYPE prism_errors_total counter")
         lines.append(f"prism_errors_total {self._total_errors}")
-        lines.append(f"# HELP prism_tokens_total Total tokens processed")
-        lines.append(f"# TYPE prism_tokens_total counter")
+        lines.append("# HELP prism_tokens_total Total tokens processed")
+        lines.append("# TYPE prism_tokens_total counter")
         lines.append(f"prism_tokens_total {self._total_tokens}")
-        lines.append(f"# HELP prism_cache_hits_total Cache hits")
-        lines.append(f"# TYPE prism_cache_hits_total counter")
+        lines.append("# HELP prism_cache_hits_total Cache hits")
+        lines.append("# TYPE prism_cache_hits_total counter")
         lines.append(f"prism_cache_hits_total {self._total_cache_hits}")
 
         for model, count in self._by_model.items():

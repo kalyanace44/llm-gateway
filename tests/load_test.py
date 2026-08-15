@@ -5,12 +5,10 @@ Usage:
 """
 import argparse
 import asyncio
-import time
-import json
 import statistics
+import time
 
 import httpx
-
 
 PROMPTS = [
     "Explain what a load balancer does in one sentence.",
@@ -68,7 +66,7 @@ async def make_request(
                 "status_code": resp.status_code,
                 "cached": False,
             }
-    except Exception as e:
+    except (httpx.HTTPError, TimeoutError, OSError) as e:
         return {
             "status": "error",
             "latency": time.time() - start,
@@ -88,7 +86,7 @@ async def run_load_test(
 ):
     """Run the load test."""
     print(f"\n{'='*60}")
-    print(f"  LLM Gateway Load Test")
+    print("  LLM Gateway Load Test")
     print(f"{'='*60}")
     print(f"  URL:         {url}")
     print(f"  Model:       {model}")
@@ -125,7 +123,7 @@ async def run_load_test(
     total_tokens = sum(r["tokens"] for r in successes)
 
     print(f"  {'='*60}")
-    print(f"  RESULTS")
+    print("  RESULTS")
     print(f"  {'='*60}")
     print(f"  Total time:     {total_time:.2f}s")
     print(f"  Throughput:     {len(results)/total_time:.1f} req/s")
@@ -136,7 +134,7 @@ async def run_load_test(
     print()
 
     if latencies:
-        print(f"  Latency (success only):")
+        print("  Latency (success only):")
         print(f"    p50:  {statistics.median(latencies):.3f}s")
         print(f"    p95:  {sorted(latencies)[int(len(latencies)*0.95)]:.3f}s")
         print(f"    p99:  {sorted(latencies)[int(len(latencies)*0.99)]:.3f}s")

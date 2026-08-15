@@ -3,10 +3,19 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import TYPE_CHECKING
 
+import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from prism.auth.keys import KeyManager
+    from prism.cache.store import CacheStore
+    from prism.observe.metrics import MetricsCollector
+    from prism.resilience.circuit_breaker import CircuitBreakerRegistry
+    from prism.routing.router import Router
 
 router = APIRouter(tags=["proxy"])
 
@@ -42,7 +51,7 @@ async def chat_completions(body: ChatRequest, request: Request):
     start = time.perf_counter()
 
     # 1. Auth + rate limiting
-    keys: "KeyManager" = request.app.state.keys
+    keys: KeyManager = request.app.state.keys
     api_key = _extract_key(request)
     key_info = keys.validate(api_key)
     if not key_info:
@@ -74,19 +83,19 @@ async def chat_completions(body: ChatRequest, request: Request):
                         msg.content = redacted.redacted_content
 
     # 3. Cache check
-    cache: "CacheStore" = request.app.state.cache
+    cache: CacheStore = request.app.state.cache
     if body.prism_cache and not body.stream:
         cached = cache.get(body.model, body.messages)
         if cached:
-            metrics: "MetricsCollector" = request.app.state.metrics
+            metrics: MetricsCollector = request.app.state.metrics
             metrics.record_cache_hit(body.model, key_info.team)
             cached["_prism"] = {"request_id": request_id, "cached": True}
             return cached
 
     # 4. Route to provider with resilience
-    router_svc: "Router" = request.app.state.router
-    breakers: "CircuitBreakerRegistry" = request.app.state.breakers
-    metrics: "MetricsCollector" = request.app.state.metrics
+    router_svc: Router = request.app.state.router
+    breakers: CircuitBreakerRegistry = request.app.state.breakers
+    metrics: MetricsCollector = request.app.state.metrics
 
     payload = body.model_dump(exclude={"prism_cache", "prism_metadata"}, exclude_none=True)
 
@@ -102,8 +111,8 @@ async def chat_completions(body: ChatRequest, request: Request):
             if body.stream:
                 stream_gen = await router_svc.stream(provider, payload)
 
-                async def _wrap():
-                    async for chunk in stream_gen:
+                async def _wrap(_gen=stream_gen):
+                    async for chunk in _gen:
                         yield chunk
 
                 latency = time.perf_counter() - start
@@ -147,7 +156,7 @@ async def chat_completions(body: ChatRequest, request: Request):
                 }
                 return response
 
-        except Exception as e:
+        except (httpx.HTTPError, TimeoutError, OSError) as e:
             latency = time.perf_counter() - start
             breakers.record_failure(provider.name)
             metrics.record_error(body.model, provider.name, key_info.team, str(e))

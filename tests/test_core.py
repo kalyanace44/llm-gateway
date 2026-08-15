@@ -1,12 +1,13 @@
 """Tests for LLM Gateway core modules."""
 import pytest
-from gateway.core.auth import AuthManager
-from gateway.core.limiter import RateLimiter
-from gateway.core.costs import UsageTracker
-from gateway.core.backends import Backend, BackendError
-from gateway.core.router import Router
-from gateway.core.metrics import record_request, record_backend_error, update_backend_health
+
 from gateway.config import BackendConfig, GatewayConfig
+from gateway.core.auth import AuthManager
+from gateway.core.backends import Backend, BackendError
+from gateway.core.costs import UsageTracker
+from gateway.core.limiter import RateLimiter
+from gateway.core.metrics import record_backend_error, record_request, update_backend_health
+from gateway.core.router import Router
 
 
 class TestAuth:

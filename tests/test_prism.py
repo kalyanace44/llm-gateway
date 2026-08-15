@@ -1,19 +1,17 @@
 """Prism unit + integration tests."""
 from __future__ import annotations
 
-import pytest
 import time
-from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
-from prism.config import PrismConfig, ProviderConfig, ResilienceConfig, CacheConfig, RateLimitConfig
-from prism.proxy.app import create_app
-from prism.resilience import CircuitBreakerRegistry, State
-from prism.cache import CacheStore
 from prism.auth import KeyManager
+from prism.cache import CacheStore
+from prism.config import CacheConfig, PrismConfig, ProviderConfig, RateLimitConfig, ResilienceConfig
 from prism.observe import MetricsCollector
-
+from prism.proxy.app import create_app
+from prism.resilience import CircuitBreakerRegistry
 
 # --- Fixtures ---
 
@@ -414,7 +412,7 @@ class TestChatEndpoint:
         keys.register_key("limited", "limited", rate_limit=RateLimitConfig(requests_per_minute=1))
 
         # First request — burns the token
-        r1 = client.post("/v1/chat/completions",
+        client.post("/v1/chat/completions",
             headers={"Authorization": "Bearer limited"},
             json={"model": "gpt-4o", "messages": [{"role": "user", "content": "hi"}]})
         # It'll fail at the provider level (502) but pass rate limit

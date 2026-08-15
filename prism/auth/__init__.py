@@ -1,4 +1,4 @@
 """Prism auth package."""
-from prism.auth.keys import KeyManager, KeyInfo
+from prism.auth.keys import KeyInfo, KeyManager
 
-__all__ = ["KeyManager", "KeyInfo"]
+__all__ = ["KeyInfo", "KeyManager"]

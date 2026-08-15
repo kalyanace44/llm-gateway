@@ -13,11 +13,11 @@ from prism.config import PrismConfig
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle — initialize subsystems."""
-    from prism.routing.router import Router
-    from prism.resilience.circuit_breaker import CircuitBreakerRegistry
-    from prism.cache.store import CacheStore
     from prism.auth.keys import KeyManager
+    from prism.cache.store import CacheStore
     from prism.observe.metrics import MetricsCollector
+    from prism.resilience.circuit_breaker import CircuitBreakerRegistry
+    from prism.routing.router import Router
     from prism_cloud.scanner import SecurityScanner
 
     cfg: PrismConfig = app.state.config
@@ -67,8 +67,8 @@ def create_app(config: PrismConfig | None = None) -> FastAPI:
     app.add_middleware(TimingMiddleware)
 
     # Routes
-    from prism.proxy.routes import chat, models, health, admin
     from prism.dashboard import router as dashboard_router
+    from prism.proxy.routes import admin, chat, health, models
     app.include_router(chat.router)
     app.include_router(models.router)
     app.include_router(health.router)

@@ -35,9 +35,7 @@ class CircuitBreaker:
                 self._transition(State.HALF_OPEN)
                 return True
             return False
-        if self.state == State.HALF_OPEN:
-            return True
-        return False
+        return self.state == State.HALF_OPEN
 
     def record_success(self):
         if self.state == State.HALF_OPEN:

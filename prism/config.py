@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
 
 import yaml
 
@@ -71,7 +70,7 @@ class PrismConfig:
     observe: ObserveConfig = field(default_factory=ObserveConfig)
 
     @classmethod
-    def from_env(cls) -> "PrismConfig":
+    def from_env(cls) -> PrismConfig:
         """Load config from environment or config file."""
         config_path = os.environ.get("PRISM_CONFIG", "prism.yaml")
         if os.path.exists(config_path):
@@ -79,7 +78,7 @@ class PrismConfig:
         return cls._from_env_vars()
 
     @classmethod
-    def from_yaml(cls, path: str) -> "PrismConfig":
+    def from_yaml(cls, path: str) -> PrismConfig:
         """Load from YAML config file."""
         with open(path) as f:
             raw = yaml.safe_load(f)
@@ -105,7 +104,7 @@ class PrismConfig:
         return cfg
 
     @classmethod
-    def _from_env_vars(cls) -> "PrismConfig":
+    def _from_env_vars(cls) -> PrismConfig:
         """Minimal config from env vars."""
         import json
         providers_raw = os.environ.get("PRISM_PROVIDERS", "[]")
@@ -117,7 +116,7 @@ class PrismConfig:
             providers=providers,
         )
 
-    def get_provider(self, name: str) -> Optional[ProviderConfig]:
+    def get_provider(self, name: str) -> ProviderConfig | None:
         """Get provider by name."""
         for p in self.providers:
             if p.name == name:

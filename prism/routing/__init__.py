@@ -1,8 +1,9 @@
 """Smart routing — multi-provider load balancing with fallback."""
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 import httpx
-from typing import AsyncGenerator
 
 from prism.config import PrismConfig, ProviderConfig
 
