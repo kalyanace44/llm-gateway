@@ -52,6 +52,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Helm
         uses: azure/setup-helm@v4
       - name: Add dependency repos
@@ -69,12 +70,10 @@ jobs:
       - name: Update Helm repo index
         run: helm repo index docs/charts/ --url https://kalyanace44.github.io/llm-gateway/charts --merge docs/charts/index.yaml
       - name: Commit and push Helm chart
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/charts/
-          git commit -m "release: Helm chart ${GITHUB_REF_NAME}" || true
-          git push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "release: Helm chart ${GITHUB_REF_NAME}"
+          file_pattern: docs/charts/*
 
   docker:
     needs: test
