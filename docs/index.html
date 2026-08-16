@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prism — AI Traffic Control Plane for Fintech</title>
+    <title>Prism — AI Traffic Control Plane</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -88,6 +88,16 @@
         .code-block .string { color: #34d399; }
         .code-block .fn { color: #60a5fa; }
 
+        /* Install options */
+        .install-section { padding: 40px 0 80px; }
+        .install-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
+        .install-card {
+            background: var(--surface); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px; padding: 20px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px;
+        }
+        .install-card .label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-family: sans-serif; }
+
         /* Problems */
         .problems { padding: 80px 0; }
         .section-title { font-size: 36px; font-weight: 800; text-align: center; margin-bottom: 16px; }
@@ -138,6 +148,26 @@
         .feature h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
         .feature p { color: var(--text-muted); font-size: 14px; }
 
+        /* Providers */
+        .providers { padding: 80px 0; text-align: center; }
+        .provider-grid {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 32px;
+        }
+        .provider-chip {
+            background: var(--surface); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600;
+        }
+
+        /* Compliance */
+        .compliance { padding: 80px 0; text-align: center; }
+        .compliance-badges { display: flex; justify-content: center; gap: 24px; margin-top: 32px; flex-wrap: wrap; }
+        .badge {
+            background: var(--surface); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 16px 24px; min-width: 120px;
+        }
+        .badge-icon { font-size: 28px; margin-bottom: 6px; }
+        .badge-label { font-size: 12px; font-weight: 600; }
+
         /* Pricing */
         .pricing { padding: 80px 0; }
         .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 900px; margin: 0 auto; }
@@ -157,16 +187,6 @@
         .price-card li { padding: 8px 0; font-size: 14px; color: var(--text-muted); }
         .price-card li::before { content: "✓ "; color: var(--success); font-weight: 700; }
 
-        /* Compliance */
-        .compliance { padding: 80px 0; text-align: center; }
-        .compliance-badges { display: flex; justify-content: center; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
-        .badge {
-            background: var(--surface); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 20px 32px; min-width: 140px;
-        }
-        .badge-icon { font-size: 32px; margin-bottom: 8px; }
-        .badge-label { font-size: 13px; font-weight: 600; }
-
         /* CTA */
         .cta {
             padding: 100px 0; text-align: center;
@@ -185,12 +205,10 @@
         @media (max-width: 768px) {
             .nav-links { display: none; }
             .hero-stats { flex-direction: column; gap: 24px; }
-            .problem-grid, .feature-grid, .pricing-grid { grid-template-columns: 1fr; }
+            .problem-grid, .feature-grid, .pricing-grid, .install-grid { grid-template-columns: 1fr; }
+            .compliance-badges { gap: 12px; }
+            .provider-grid { gap: 8px; }
         }
-
-        /* Animations */
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .floating { animation: float 3s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -200,6 +218,7 @@
             <div class="nav-links">
                 <a href="#features">Features</a>
                 <a href="#security">Security</a>
+                <a href="#compliance">Compliance</a>
                 <a href="#pricing">Pricing</a>
                 <a href="https://github.com/kalyanace44/llm-gateway" target="_blank">GitHub</a>
                 <a href="#cta" class="btn-primary">Get Started</a>
@@ -209,29 +228,29 @@
 
     <section class="hero">
         <div class="container">
-            <div class="hero-badge">🛡️ Built for RBI-regulated fintech</div>
-            <h1>The AI Control Plane<br>for <span>Indian Fintech</span></h1>
-            <p>Route, protect, and optimize every LLM call. Block PII before it leaves India. Cut AI costs 40%. Zero code changes.</p>
+            <div class="hero-badge">v0.2.0 — Now with 13 providers + 12 compliance frameworks</div>
+            <h1>The AI Traffic Control Plane<br>for <span>Every Industry</span></h1>
+            <p>Route, protect, and optimize every LLM call. Enforce compliance across HIPAA, PCI-DSS, GDPR, SOC2, and more. Zero code changes.</p>
             <div class="hero-cta">
-                <a href="#cta" class="btn-primary">Start Free →</a>
+                <a href="#cta" class="btn-primary">Deploy in 5 Minutes →</a>
                 <a href="https://github.com/kalyanace44/llm-gateway" class="btn-outline">View on GitHub</a>
             </div>
             <div class="hero-stats">
                 <div class="stat">
-                    <div class="stat-value">&lt;1ms</div>
+                    <div class="stat-value">&lt;2ms</div>
                     <div class="stat-label">Added latency</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value">40%</div>
-                    <div class="stat-label">Cost reduction</div>
+                    <div class="stat-value">13</div>
+                    <div class="stat-label">Providers</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value">100%</div>
-                    <div class="stat-label">RBI compliant</div>
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Compliance frameworks</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-value">0</div>
-                    <div class="stat-label">Code changes</div>
+                    <div class="stat-value">60+</div>
+                    <div class="stat-label">PII entity types</div>
                 </div>
             </div>
         </div>
@@ -244,49 +263,69 @@
                 <span class="keyword">from</span> openai <span class="keyword">import</span> OpenAI<br><br>
                 client = <span class="fn">OpenAI</span>(<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;base_url=<span class="string">"http://prism.internal:8000/v1"</span>,<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;api_key=<span class="string">"team-credit-scoring"</span>,<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;api_key=<span class="string">"team-ml-platform"</span>,<br>
                 )<br><br>
                 <span class="comment"># PII is automatically blocked/redacted before leaving your network</span><br>
-                <span class="comment"># Requests auto-failover across providers</span><br>
-                <span class="comment"># Every call is logged for RBI audit compliance</span>
+                <span class="comment"># Requests auto-failover across 13 providers</span><br>
+                <span class="comment"># Semantic caching eliminates redundant calls</span><br>
+                <span class="comment"># Every call logged with cost, latency, and compliance status</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="install-section">
+        <div class="container">
+            <div class="install-grid">
+                <div class="install-card">
+                    <div class="label">PyPI</div>
+                    pip install prism-gateway
+                </div>
+                <div class="install-card">
+                    <div class="label">Docker</div>
+                    docker pull ghcr.io/kalyanace44/prism-gateway
+                </div>
+                <div class="install-card">
+                    <div class="label">Helm</div>
+                    helm install prism prism/prism
+                </div>
             </div>
         </div>
     </section>
 
     <section class="problems">
         <div class="container">
-            <h2 class="section-title">Built for Fintech Problems</h2>
-            <p class="section-sub">Every fintech using AI for credit scoring, fraud detection, or KYC has these problems.</p>
+            <h2 class="section-title">Problems We Solve</h2>
+            <p class="section-sub">Every company sending data through AI has these risks. Prism eliminates them at the network layer.</p>
             <div class="problem-grid">
                 <div class="problem-card">
-                    <div class="icon">🇮🇳</div>
-                    <h3>RBI Data Localization</h3>
-                    <p>Customer PAN, Aadhaar, UPI IDs flowing to US-based LLM servers. One audit = shutdown. Prism blocks PII before it leaves your network.</p>
+                    <div class="icon">🔓</div>
+                    <h3>Sensitive Data Leakage</h3>
+                    <p>SSNs, credit cards, medical records, API keys flowing to third-party LLMs. One leak = regulatory action + brand damage. Prism blocks PII before it leaves your network.</p>
                 </div>
                 <div class="problem-card">
                     <div class="icon">💰</div>
-                    <h3>Margins vs AI Costs</h3>
-                    <p>₹2-5 per UPI transaction margin. Can't spend ₹0.50 per AI call. Prism routes to cheapest model meeting your quality threshold.</p>
+                    <h3>Uncontrolled AI Spend</h3>
+                    <p>Teams burning through $50K/month with no attribution. No one knows which team, which model, which use case. Prism gives per-team budgets and cost-optimized routing.</p>
                 </div>
                 <div class="problem-card">
                     <div class="icon">⚡</div>
-                    <h3>Zero Downtime Tolerance</h3>
-                    <p>Credit-line approvals stop = revenue stops. Circuit breakers auto-failover across providers in &lt;100ms.</p>
+                    <h3>Provider Outages</h3>
+                    <p>OpenAI goes down = your product goes down. Circuit breakers auto-failover across providers in milliseconds. No single point of failure.</p>
                 </div>
                 <div class="problem-card">
                     <div class="icon">📋</div>
-                    <h3>RBI Audit Trail</h3>
-                    <p>"Show every AI-assisted lending decision for 2024." Prism maintains a hash-chained, tamper-evident log of every interaction.</p>
+                    <h3>Compliance Gaps</h3>
+                    <p>HIPAA, PCI-DSS, GDPR, SOC2 all require audit trails for AI usage. Prism logs every request with cost, latency, PII findings, and provider used.</p>
                 </div>
                 <div class="problem-card">
-                    <div class="icon">🔐</div>
-                    <h3>PCI-DSS Exposure</h3>
-                    <p>Credit card numbers and UPI VPAs in prompts = instant compliance failure. Auto-redaction catches what developers miss.</p>
+                    <div class="icon">🎯</div>
+                    <h3>Prompt Injection Attacks</h3>
+                    <p>Users manipulating AI via crafted prompts. "Ignore previous instructions" → data exfiltration. Prism detects and blocks injection patterns before they reach models.</p>
                 </div>
                 <div class="problem-card">
-                    <div class="icon">📊</div>
-                    <h3>No Cost Attribution</h3>
-                    <p>50 engineers calling GPT-4 with no per-team tracking. Finance asks "who's spending ₹15L/month?" — silence.</p>
+                    <div class="icon">🔄</div>
+                    <h3>Vendor Lock-in</h3>
+                    <p>Hardcoded to one provider. Can't switch when pricing changes or quality drops. Prism normalizes the interface — swap providers in config, not code.</p>
                 </div>
             </div>
         </div>
@@ -295,7 +334,7 @@
     <section class="scanner-demo" id="security">
         <div class="container">
             <h2 class="section-title">See the Scanner in Action</h2>
-            <p class="section-sub">Real-time PII detection blocks sensitive data before it ever reaches LLM providers.</p>
+            <p class="section-sub">Real-time detection across 60+ entity types. Blocks sensitive data before it reaches any LLM provider.</p>
             <div class="demo-container">
                 <h3>⚠️ Incoming Request (blocked)</h3>
                 <div class="demo-request">
@@ -304,8 +343,8 @@
                     &nbsp;&nbsp;"model": "gpt-4o",<br>
                     &nbsp;&nbsp;"messages": [{<br>
                     &nbsp;&nbsp;&nbsp;&nbsp;"role": "user",<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;"content": "Check credit score for PAN <span class="redacted">ABCDE1234F</span>,<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Aadhaar <span class="redacted">1234-5678-9012</span>, email <span class="redacted">rahul@company.com</span>"<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;"content": "Check eligibility for SSN <span class="redacted">123-45-6789</span>,<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;card <span class="redacted">4532-1234-5678-9012</span>, MRN <span class="redacted">MRN:789456</span>"<br>
                     &nbsp;&nbsp;}]<br>
                     }
                 </div>
@@ -314,9 +353,9 @@
                     {<br>
                     &nbsp;&nbsp;"error": "Request blocked by security scanner",<br>
                     &nbsp;&nbsp;"findings": [<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;{"type": "pii", "category": "pan_number", "action": "block"},<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;{"type": "pii", "category": "aadhaar", "action": "block"},<br>
-                    &nbsp;&nbsp;&nbsp;&nbsp;{"type": "pii", "category": "email", "action": "redact"}<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;{"type": "pii", "entity": "us_ssn", "framework": "hipaa", "action": "block"},<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;{"type": "pii", "entity": "credit_card", "framework": "pci_dss", "action": "block"},<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;{"type": "pii", "entity": "medical_record", "framework": "hipaa", "action": "block"}<br>
                     &nbsp;&nbsp;],<br>
                     &nbsp;&nbsp;"request_id": "req_7f3a9b2c"<br>
                     }
@@ -332,72 +371,127 @@
             <div class="feature-grid">
                 <div class="feature">
                     <span class="feature-tag tag-oss">OSS</span>
-                    <h3>Multi-Provider Routing</h3>
-                    <p>Route to OpenAI, Anthropic, Google, or self-hosted vLLM. Priority-based with weighted load balancing.</p>
+                    <h3>13 Provider Adapters</h3>
+                    <p>OpenAI, Anthropic, Google Gemini, Azure, AWS Bedrock, Groq, Together, Fireworks, Mistral, DeepSeek, vLLM, Ollama, and more.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-tag tag-oss">OSS</span>
+                    <h3>5 Routing Strategies</h3>
+                    <p>Priority, weighted, round-robin, least-latency, and cost-optimized. Canary routing for safe model rollouts.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-tag tag-oss">OSS</span>
+                    <h3>Semantic Caching</h3>
+                    <p>Embedding-based similarity matching. "How do I reset my password?" hits cache even if phrased differently. Cuts costs 30-60%.</p>
                 </div>
                 <div class="feature">
                     <span class="feature-tag tag-oss">OSS</span>
                     <h3>Circuit Breakers</h3>
-                    <p>Per-provider failure isolation. Auto-recovery. Never let one provider outage cascade to your entire platform.</p>
-                </div>
-                <div class="feature">
-                    <span class="feature-tag tag-oss">OSS</span>
-                    <h3>Response Caching</h3>
-                    <p>LRU cache with TTL. Same question = instant response. Cuts costs on repeated prompts by 30-60%.</p>
+                    <p>Per-provider failure isolation with auto-recovery. Never let one provider outage cascade to your platform.</p>
                 </div>
                 <div class="feature">
                     <span class="feature-tag tag-oss">OSS</span>
                     <h3>Rate Limiting + Budgets</h3>
-                    <p>Per-team API keys with token bucket rate limiting. Set daily spend caps. Never get a surprise bill.</p>
+                    <p>Per-team API keys with token-bucket rate limiting. Set daily spend caps. Never get a surprise bill.</p>
+                </div>
+                <div class="feature">
+                    <span class="feature-tag tag-oss">OSS</span>
+                    <h3>Request Explorer</h3>
+                    <p>Every request logged: model, latency, tokens, cost, provider, cache status. Filter by team, model, or status. Built-in /admin/requests API.</p>
                 </div>
                 <div class="feature">
                     <span class="feature-tag tag-cloud">CLOUD</span>
-                    <h3>PII/Injection Scanning</h3>
-                    <p>Block PAN, Aadhaar, UPI IDs, credit cards before they leave India. Detect prompt injection attacks.</p>
+                    <h3>Compliance Scanner</h3>
+                    <p>60+ PII entities across 12 frameworks. Custom rules via YAML. Detect prompt injections. Block, redact, warn, or audit.</p>
                 </div>
                 <div class="feature">
                     <span class="feature-tag tag-cloud">CLOUD</span>
                     <h3>Cost Optimizer</h3>
-                    <p>Automatically recommend cheaper models that meet your quality threshold. "Switch to GPT-4o-mini for 80% savings."</p>
+                    <p>Auto-route to cheapest model meeting quality thresholds. Per-provider cost tracking with per-1M-token pricing.</p>
                 </div>
                 <div class="feature">
                     <span class="feature-tag tag-cloud">CLOUD</span>
-                    <h3>Compliance Dashboard</h3>
-                    <p>Hash-chained audit log. SOC2/RBI export. Data residency controls. One-click compliance report.</p>
-                </div>
-                <div class="feature">
-                    <span class="feature-tag tag-cloud">CLOUD</span>
-                    <h3>Continuous Eval</h3>
-                    <p>Detect quality regressions on production traffic with statistical significance. Auto-alert before users notice.</p>
+                    <h3>Dashboard</h3>
+                    <p>Real-time KPIs: requests/sec, error rate, cache hit rate, cost, provider health, model distribution. Auto-refreshing dark UI.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="compliance">
+    <section class="providers">
         <div class="container">
-            <h2 class="section-title">Compliance Built In</h2>
-            <p class="section-sub">Pass audits without scrambling. Every framework covered.</p>
+            <h2 class="section-title">Works With Every Provider</h2>
+            <p class="section-sub">One config file. Automatic format translation. Failover in milliseconds.</p>
+            <div class="provider-grid">
+                <div class="provider-chip">OpenAI</div>
+                <div class="provider-chip">Anthropic</div>
+                <div class="provider-chip">Google Gemini</div>
+                <div class="provider-chip">Azure OpenAI</div>
+                <div class="provider-chip">AWS Bedrock</div>
+                <div class="provider-chip">Groq</div>
+                <div class="provider-chip">Together AI</div>
+                <div class="provider-chip">Fireworks</div>
+                <div class="provider-chip">Mistral</div>
+                <div class="provider-chip">DeepSeek</div>
+                <div class="provider-chip">vLLM</div>
+                <div class="provider-chip">Ollama</div>
+                <div class="provider-chip">Kiro</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="compliance" id="compliance">
+        <div class="container">
+            <h2 class="section-title">12 Compliance Frameworks</h2>
+            <p class="section-sub">Built-in detection rules for every major regulatory standard. Pass audits without scrambling.</p>
             <div class="compliance-badges">
                 <div class="badge">
-                    <div class="badge-icon">🏛️</div>
-                    <div class="badge-label">RBI Guidelines</div>
+                    <div class="badge-icon">🏥</div>
+                    <div class="badge-label">HIPAA</div>
                 </div>
                 <div class="badge">
-                    <div class="badge-icon">🔒</div>
+                    <div class="badge-icon">💳</div>
                     <div class="badge-label">PCI-DSS</div>
-                </div>
-                <div class="badge">
-                    <div class="badge-icon">🛡️</div>
-                    <div class="badge-label">SOC 2</div>
                 </div>
                 <div class="badge">
                     <div class="badge-icon">🇪🇺</div>
                     <div class="badge-label">GDPR</div>
                 </div>
                 <div class="badge">
+                    <div class="badge-icon">🛡️</div>
+                    <div class="badge-label">SOC 2</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🏛️</div>
+                    <div class="badge-label">SOX</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🇺🇸</div>
+                    <div class="badge-label">CCPA</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🇮🇳</div>
+                    <div class="badge-label">DPDP Act</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🎓</div>
+                    <div class="badge-label">FERPA</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🏦</div>
+                    <div class="badge-label">GLBA</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🔐</div>
+                    <div class="badge-label">NIST</div>
+                </div>
+                <div class="badge">
                     <div class="badge-icon">📋</div>
                     <div class="badge-label">ISO 27001</div>
+                </div>
+                <div class="badge">
+                    <div class="badge-icon">🏛️</div>
+                    <div class="badge-label">RBI</div>
                 </div>
             </div>
         </div>
@@ -413,20 +507,24 @@
                     <div class="price">Free<span> forever</span></div>
                     <ul>
                         <li>Self-host, unlimited requests</li>
-                        <li>Multi-provider routing</li>
-                        <li>Circuit breakers</li>
-                        <li>Response caching</li>
+                        <li>13 provider adapters</li>
+                        <li>5 routing strategies</li>
+                        <li>Semantic caching</li>
+                        <li>Circuit breakers + rate limiting</li>
+                        <li>Request logging + dashboard</li>
                         <li>Prometheus metrics</li>
-                        <li>Community support</li>
+                        <li>Helm chart + Docker image</li>
                     </ul>
                     <a href="https://github.com/kalyanace44/llm-gateway" class="btn-outline" style="display:block;text-align:center;">View on GitHub</a>
                 </div>
                 <div class="price-card featured">
                     <h3>Team</h3>
-                    <div class="price">₹25K<span>/month</span></div>
+                    <div class="price">$299<span>/month</span></div>
                     <ul>
                         <li>Everything in OSS +</li>
-                        <li>PII/injection scanning</li>
+                        <li>Compliance scanner (12 frameworks)</li>
+                        <li>Custom PII/secret detection rules</li>
+                        <li>Prompt injection blocking</li>
                         <li>Cost optimization engine</li>
                         <li>Per-team cost attribution</li>
                         <li>Audit log export</li>
@@ -439,11 +537,13 @@
                     <div class="price">Custom</div>
                     <ul>
                         <li>Everything in Team +</li>
-                        <li>RBI compliance dashboard</li>
                         <li>Multi-cluster federation</li>
-                        <li>A/B testing + auto-promote</li>
+                        <li>A/B testing + canary routing</li>
                         <li>SSO/SCIM + RBAC</li>
+                        <li>Webhook alerts (Slack/PagerDuty)</li>
+                        <li>Data residency controls</li>
                         <li>Dedicated support + SLA</li>
+                        <li>Custom compliance frameworks</li>
                     </ul>
                     <a href="mailto:kalyan@prism.dev" class="btn-outline" style="display:block;text-align:center;">Contact Sales</a>
                 </div>
@@ -453,8 +553,8 @@
 
     <section class="cta" id="cta">
         <div class="container">
-            <h2>Stop Leaking PII to LLM Providers</h2>
-            <p>One line change. Full control over every AI call.</p>
+            <h2>Stop Leaking Sensitive Data to LLM Providers</h2>
+            <p>One line change. Full control over every AI call across your organization.</p>
             <div class="hero-cta">
                 <a href="https://github.com/kalyanace44/llm-gateway" class="btn-primary">Deploy in 5 Minutes →</a>
                 <a href="mailto:kalyan@prism.dev" class="btn-outline">Talk to Us</a>
@@ -464,7 +564,7 @@
 
     <footer>
         <div class="container">
-            <p>© 2024 Prism. Open-source core under Apache 2.0. Made in India 🇮🇳</p>
+            <p>© 2026 Prism. Open-source core under Apache 2.0.</p>
         </div>
     </footer>
 </body>
