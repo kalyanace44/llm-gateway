@@ -1,0 +1,83 @@
+# Prism LLM Gateway - Healthcare HIPAA Configuration
+# For healthcare organizations requiring HIPAA compliance.
+# Blocks PHI (Protected Health Information) including SSN, MRN, and Medicare IDs.
+# Uses OpenAI as primary with Anthropic fallback for reliability.
+
+# --- Server Configuration ---
+host: 0.0.0.0
+port: 8080
+admin_key: ${PRISM_ADMIN_KEY}
+
+# --- LLM Providers ---
+# OpenAI as primary, Anthropic as fallback for high availability
+providers:
+  - name: openai
+    base_url: https://api.openai.com/v1
+    api_key: ${OPENAI_API_KEY}
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+    priority: 1
+    timeout: 30
+
+  - name: anthropic
+    base_url: https://api.anthropic.com/v1
+    api_key: ${ANTHROPIC_API_KEY}
+    models:
+      - claude-sonnet-4-20250514
+      - claude-haiku-4-20250414
+    priority: 2  # Fallback when OpenAI is unavailable
+    timeout: 45
+
+# --- Rate Limiting ---
+# Conservative limits appropriate for clinical workflows
+rate_limit:
+  requests_per_minute: 100
+  tokens_per_minute: 50000
+  budget_usd_per_day: 200.00
+
+# --- Response Cache ---
+# Short TTL - medical info changes frequently, avoid stale responses
+cache:
+  enabled: true
+  ttl_seconds: 300
+  max_entries: 1000
+  semantic_threshold: 0.95  # High threshold to avoid returning wrong medical info
+
+# --- Circuit Breaker / Resilience ---
+# Quick failover to Anthropic if OpenAI degrades
+resilience:
+  failure_threshold: 3
+  recovery_timeout_seconds: 30
+  success_threshold: 2
+
+# --- PII/PHI Scanner ---
+# HIPAA framework enabled - blocks all PHI entity types
+scanner:
+  enabled: true
+  frameworks:
+    - hipaa
+  # Actions by severity level
+  severity_actions:
+    critical: block    # SSN, MRN - never allow through
+    high: block        # Medicare, insurance IDs
+    medium: redact     # Names, addresses in clinical context
+    low: warn          # General identifiers
+  # Override specific entity behaviors
+  entity_overrides:
+    us_ssn: block
+    medical_record_number: block
+    medicare_beneficiary_id: block
+    us_phone: redact
+    email: redact
+    person_name: redact
+    date_of_birth: redact
+    ip_address: warn
+
+# --- Observability ---
+# Full audit logging required for HIPAA compliance
+observe:
+  metrics_enabled: true
+  traces_enabled: true
+  log_level: info
+  log_requests: true  # Required for HIPAA audit trail

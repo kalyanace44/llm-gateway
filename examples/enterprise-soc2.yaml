@@ -1,0 +1,148 @@
+# Prism LLM Gateway - Enterprise SOC2 + GDPR Configuration
+# Full-featured enterprise config with all security and compliance controls.
+# SOC2 Type II + GDPR compliance. Multiple providers with weighted routing.
+# Custom secret patterns, webhook alerting, and complete audit logging.
+
+# --- Server Configuration ---
+host: 0.0.0.0
+port: 8443
+admin_key: ${PRISM_ADMIN_KEY}
+
+# --- LLM Providers ---
+# Multiple providers with weighted routing for reliability and cost optimization
+providers:
+  - name: openai
+    base_url: https://api.openai.com/v1
+    api_key: ${OPENAI_API_KEY}
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+      - o3-mini
+    priority: 1
+    timeout: 45
+    weight: 50  # 50% of traffic
+
+  - name: anthropic
+    base_url: https://api.anthropic.com/v1
+    api_key: ${ANTHROPIC_API_KEY}
+    models:
+      - claude-sonnet-4-20250514
+      - claude-haiku-4-20250414
+    priority: 1
+    timeout: 45
+    weight: 30  # 30% of traffic
+
+  - name: azure-openai
+    base_url: https://${AZURE_RESOURCE_NAME}.openai.azure.com
+    api_key: ${AZURE_OPENAI_API_KEY}
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+    priority: 2  # Fallback tier
+    timeout: 60
+    weight: 20  # 20% of traffic / overflow
+
+# --- Rate Limiting ---
+# Enterprise-grade limits with generous budget
+rate_limit:
+  requests_per_minute: 500
+  tokens_per_minute: 200000
+  budget_usd_per_day: 1000.00
+
+# --- Response Cache ---
+# Balanced caching for enterprise workloads
+cache:
+  enabled: true
+  ttl_seconds: 1800         # 30 minutes
+  max_entries: 50000        # Large cache for enterprise scale
+  semantic_threshold: 0.93  # Balanced between hit rate and accuracy
+
+# --- Circuit Breaker / Resilience ---
+# Conservative thresholds - enterprise needs stability over speed
+resilience:
+  failure_threshold: 5
+  recovery_timeout_seconds: 60
+  success_threshold: 3
+
+# --- PII/Secrets Scanner ---
+# Dual compliance: SOC2 (security controls) + GDPR (EU personal data)
+scanner:
+  enabled: true
+  frameworks:
+    - soc2
+    - gdpr
+  # Actions by severity level
+  severity_actions:
+    critical: block    # Secrets, credentials - never leak
+    high: block        # SSN, passport numbers
+    medium: redact     # Email, phone, names
+    low: audit         # Log and allow for review
+  # Entity-level overrides for fine-grained control
+  entity_overrides:
+    us_ssn: block
+    credit_card: block
+    email: redact
+    us_phone: redact
+    person_name: redact
+    ip_address: redact       # GDPR considers IPs personal data
+    iban: block              # EU bank account numbers
+    date_of_birth: redact
+  # Custom secrets patterns - catch company-specific credential formats
+  custom_secrets:
+    - name: internal_api_key
+      pattern: "prism_[a-zA-Z0-9]{32}"
+      severity: critical
+      description: "Internal Prism API keys"
+    - name: jwt_token
+      pattern: "eyJ[A-Za-z0-9_-]{20,}\\.eyJ[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{20,}"
+      severity: critical
+      description: "JWT tokens that may contain session data"
+    - name: aws_access_key
+      pattern: "AKIA[0-9A-Z]{16}"
+      severity: critical
+      description: "AWS access key IDs"
+    - name: private_key_header
+      pattern: "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"
+      severity: critical
+      description: "Private key material"
+    - name: slack_webhook
+      pattern: "https://hooks\\.slack\\.com/services/T[A-Z0-9]+/B[A-Z0-9]+/[a-zA-Z0-9]+"
+      severity: high
+      description: "Slack incoming webhook URLs"
+  # Custom entity patterns for organization-specific identifiers
+  custom_entities:
+    - name: employee_id
+      pattern: "EMP-[0-9]{6}"
+      severity: medium
+      action: redact
+    - name: internal_ticket
+      pattern: "JIRA-[A-Z]+-[0-9]+"
+      severity: low
+      action: audit
+
+# --- Webhook Alerts ---
+# Real-time alerting for security events
+webhooks:
+  - url: ${SLACK_WEBHOOK_URL}
+    events:
+      - scanner.blocked          # PII/secret blocked
+      - scanner.critical         # Critical severity detection
+      - resilience.circuit_open  # Provider circuit breaker tripped
+      - rate_limit.exceeded      # Rate limit hit
+    retry_attempts: 3
+    timeout: 10
+
+  - url: ${PAGERDUTY_WEBHOOK_URL}
+    events:
+      - scanner.critical         # Page on-call for critical leaks
+      - resilience.all_down      # All providers unavailable
+    retry_attempts: 5
+    timeout: 15
+
+# --- Observability ---
+# Full observability stack for SOC2 audit requirements
+observe:
+  metrics_enabled: true
+  traces_enabled: true
+  log_level: info
+  log_requests: true  # SOC2 requires complete request audit trail

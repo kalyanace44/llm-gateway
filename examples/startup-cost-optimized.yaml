@@ -1,0 +1,77 @@
+# Prism LLM Gateway - Startup Cost-Optimized Configuration
+# For startups minimizing LLM spend while maintaining quality.
+# Groq (fast, cheap inference) as primary, OpenAI as fallback.
+# Aggressive caching to reduce redundant API calls.
+
+# --- Server Configuration ---
+host: 0.0.0.0
+port: 8080
+admin_key: ${PRISM_ADMIN_KEY}
+
+# --- LLM Providers ---
+# Groq primary (fast inference, lower cost), OpenAI fallback (broader model support)
+providers:
+  - name: groq
+    base_url: https://api.groq.com/openai/v1
+    api_key: ${GROQ_API_KEY}
+    models:
+      - llama-3.3-70b-versatile
+      - llama-3.1-8b-instant
+      - mixtral-8x7b-32768
+    priority: 1  # Primary - fastest and cheapest
+    timeout: 15  # Groq is fast, short timeout to fail over quickly
+
+  - name: openai
+    base_url: https://api.openai.com/v1
+    api_key: ${OPENAI_API_KEY}
+    models:
+      - gpt-4o-mini       # Cost-effective for most tasks
+      - gpt-4o            # Only when quality is critical
+    priority: 2  # Fallback when Groq is unavailable or rate-limited
+    timeout: 30
+
+# --- Rate Limiting ---
+# Tight limits to control costs aggressively
+rate_limit:
+  requests_per_minute: 60
+  tokens_per_minute: 30000
+  budget_usd_per_day: 25.00  # Strict daily budget for a startup
+
+# --- Response Cache ---
+# Aggressive caching to maximize cache hits and reduce API spend
+cache:
+  enabled: true
+  ttl_seconds: 7200          # 2 hours - long TTL for cost savings
+  max_entries: 10000         # Large cache pool
+  semantic_threshold: 0.90   # Lower threshold = more cache hits = less spend
+
+# --- Circuit Breaker / Resilience ---
+# Fast failover from Groq to OpenAI
+resilience:
+  failure_threshold: 3
+  recovery_timeout_seconds: 20  # Try Groq again quickly (it recovers fast)
+  success_threshold: 2
+
+# --- PII Scanner ---
+# Lightweight scanning - block obvious PII, don't over-engineer
+scanner:
+  enabled: true
+  frameworks: []  # No specific compliance framework needed
+  severity_actions:
+    critical: block
+    high: redact
+    medium: warn
+    low: allow
+  entity_overrides:
+    us_ssn: block
+    credit_card: block
+    email: warn
+    us_phone: warn
+
+# --- Observability ---
+# Minimal logging to reduce overhead; metrics for cost tracking
+observe:
+  metrics_enabled: true
+  traces_enabled: false      # Skip traces to reduce overhead
+  log_level: warn            # Only warnings and errors
+  log_requests: false        # Save on log storage costs

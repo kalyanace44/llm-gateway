@@ -1,0 +1,94 @@
+# Prism LLM Gateway - Fintech PCI-DSS + DPDP (India) Configuration
+# For Indian fintech companies handling payment card data and personal data.
+# Enforces PCI-DSS for card data and DPDP Act for Indian personal identifiers.
+# Blocks credit cards, PAN, Aadhaar, and UPI IDs.
+
+# --- Server Configuration ---
+host: 0.0.0.0
+port: 8080
+admin_key: ${PRISM_ADMIN_KEY}
+
+# --- LLM Providers ---
+# OpenAI primary, Azure OpenAI as regulated fallback (data residency)
+providers:
+  - name: openai
+    base_url: https://api.openai.com/v1
+    api_key: ${OPENAI_API_KEY}
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+    priority: 1
+    timeout: 30
+
+  - name: azure-openai
+    base_url: https://${AZURE_RESOURCE_NAME}.openai.azure.com
+    api_key: ${AZURE_OPENAI_API_KEY}
+    models:
+      - gpt-4o
+      - gpt-4o-mini
+    priority: 2  # Fallback; also useful for India data residency requirements
+    timeout: 30
+
+# --- Rate Limiting ---
+# Strict budget caps to prevent runaway costs
+rate_limit:
+  requests_per_minute: 200
+  tokens_per_minute: 100000
+  budget_usd_per_day: 150.00  # Hard daily cap
+
+# --- Response Cache ---
+# Moderate caching - financial queries can be cached briefly
+cache:
+  enabled: true
+  ttl_seconds: 600
+  max_entries: 5000
+  semantic_threshold: 0.92
+
+# --- Circuit Breaker / Resilience ---
+resilience:
+  failure_threshold: 5
+  recovery_timeout_seconds: 60
+  success_threshold: 3
+
+# --- PII/Financial Data Scanner ---
+# Dual framework: PCI-DSS (payment cards) + DPDP (Indian personal data)
+scanner:
+  enabled: true
+  frameworks:
+    - pci_dss
+    - dpdp
+  # Actions by severity level
+  severity_actions:
+    critical: block    # Card numbers, Aadhaar - absolute block
+    high: block        # PAN, UPI IDs
+    medium: redact     # Partial card numbers, bank account hints
+    low: audit         # Log for review but allow through
+  # Override specific Indian financial/personal identifiers
+  entity_overrides:
+    credit_card: block       # PCI-DSS: never transmit full card numbers
+    in_pan: block            # Indian Permanent Account Number
+    in_aadhaar: block        # 12-digit Aadhaar - highly sensitive
+    in_upi: block            # UPI VPA (e.g., name@upi)
+    us_ssn: block            # Block if encountered
+    email: redact
+    us_phone: redact
+    in_phone: redact
+    bank_account_number: block
+  # Custom patterns for Indian financial identifiers not in defaults
+  custom_entities:
+    - name: ifsc_code
+      pattern: "[A-Z]{4}0[A-Z0-9]{6}"
+      severity: medium
+      action: redact
+    - name: indian_passport
+      pattern: "[A-Z][0-9]{7}"
+      severity: high
+      action: block
+
+# --- Observability ---
+# Detailed logging for PCI-DSS audit requirements
+observe:
+  metrics_enabled: true
+  traces_enabled: true
+  log_level: info
+  log_requests: true  # PCI-DSS requires transaction audit logs

@@ -18,6 +18,9 @@ class ProviderConfig:
     max_retries: int = 2
     timeout: float = 60.0
     priority: int = 0  # lower = preferred
+    # Cost per 1M tokens (for cost-optimized routing)
+    cost_per_1m_input: float = 0.0
+    cost_per_1m_output: float = 0.0
 
 
 @dataclass
@@ -47,6 +50,15 @@ class ResilienceConfig:
 
 
 @dataclass
+class RoutingConfig:
+    """Routing strategy configuration."""
+    strategy: str = "priority"  # priority | weighted | round_robin | least_latency | cost_optimized
+    # For canary/A-B testing: percentage to route to secondary
+    canary_pct: float = 0.0
+    canary_provider: str = ""
+
+
+@dataclass
 class ObserveConfig:
     """Observability settings."""
     metrics_enabled: bool = True
@@ -67,6 +79,7 @@ class PrismConfig:
     rate_limit: RateLimitConfig = field(default_factory=RateLimitConfig)
     cache: CacheConfig = field(default_factory=CacheConfig)
     resilience: ResilienceConfig = field(default_factory=ResilienceConfig)
+    routing: RoutingConfig = field(default_factory=RoutingConfig)
     observe: ObserveConfig = field(default_factory=ObserveConfig)
 
     @classmethod
@@ -99,6 +112,8 @@ class PrismConfig:
             cfg.cache = CacheConfig(**raw["cache"])
         if "resilience" in raw:
             cfg.resilience = ResilienceConfig(**raw["resilience"])
+        if "routing" in raw:
+            cfg.routing = RoutingConfig(**raw["routing"])
         if "observe" in raw:
             cfg.observe = ObserveConfig(**raw["observe"])
         return cfg
@@ -124,6 +139,29 @@ class PrismConfig:
         return None
 
     def get_providers_for_model(self, model: str) -> list[ProviderConfig]:
-        """Get all providers that serve a given model, sorted by priority."""
+        """Get all providers that serve a given model, ordered by routing strategy."""
         matches = [p for p in self.providers if model in p.models or not p.models]
-        return sorted(matches, key=lambda p: p.priority)
+        if not matches:
+            return []
+
+        strategy = self.routing.strategy
+
+        if strategy == "cost_optimized":
+            # Cheapest first (by input cost — most requests are input-heavy)
+            return sorted(matches, key=lambda p: (p.cost_per_1m_input, p.priority))
+        elif strategy == "weighted":
+            # Weighted random shuffle (providers with higher weight appear earlier)
+            import random
+            return sorted(matches, key=lambda p: -p.weight * random.random())
+        elif strategy == "round_robin":
+            # Rotate based on simple counter
+            self._rr_counter = getattr(self, "_rr_counter", 0) + 1
+            idx = self._rr_counter % len(matches)
+            return matches[idx:] + matches[:idx]
+        elif strategy == "least_latency":
+            # Sort by priority (latency tracking happens at a higher level)
+            # TODO: integrate with MetricsCollector for real latency data
+            return sorted(matches, key=lambda p: p.priority)
+        else:
+            # Default: priority
+            return sorted(matches, key=lambda p: p.priority)
