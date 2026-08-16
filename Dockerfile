@@ -3,7 +3,6 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 COPY pyproject.toml .
 COPY prism/ prism/
-COPY prism_cloud/ prism_cloud/
 
 RUN pip install --no-cache-dir build && \
     pip install --no-cache-dir . && \
@@ -15,7 +14,6 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY prism/ prism/
-COPY prism_cloud/ prism_cloud/
 
 ENV PRISM_CONFIG=/etc/prism/prism.yaml
 EXPOSE 8000
