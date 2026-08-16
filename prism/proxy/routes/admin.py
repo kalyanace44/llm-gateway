@@ -95,3 +95,25 @@ async def reset_provider(name: str, request: Request):
     breakers = request.app.state.breakers
     breakers.reset(name)
     return {"status": "reset", "provider": name}
+
+
+@router.get("/requests")
+async def get_requests(
+    request: Request,
+    limit: int = 50,
+    offset: int = 0,
+    team: str | None = None,
+    model: str | None = None,
+    status: str | None = None,
+    provider: str | None = None,
+):
+    """Get recent request logs with optional filters."""
+    _check_admin(request)
+    log = request.app.state.request_log
+    return {
+        "requests": log.get_recent(
+            limit=limit, offset=offset,
+            team=team, model=model, status=status, provider=provider,
+        ),
+        "summary": log.get_summary(),
+    }
