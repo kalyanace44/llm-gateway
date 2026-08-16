@@ -6,11 +6,10 @@ for SOC2/HIPAA/GDPR compliance.
 from __future__ import annotations
 
 import hashlib
-import json
 import time
-from dataclasses import dataclass, field
 from collections import deque
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
 
 @dataclass

@@ -6,9 +6,8 @@ that reduce spend without degrading user experience.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
 from collections import defaultdict
-
+from dataclasses import dataclass, field
 
 # Approximate pricing per 1M tokens (input/output)
 MODEL_PRICING = {
@@ -85,7 +84,6 @@ class CostOptimizer:
             recent = records[-100:]  # Last 100 requests
             avg_input = sum(r.input_tokens for r in recent) / len(recent)
             avg_output = sum(r.output_tokens for r in recent) / len(recent)
-            avg_quality = sum(r.quality_score for r in recent) / len(recent)
             daily_requests = len([r for r in recent if r.timestamp > time.time() - 86400])
 
             pricing = MODEL_PRICING.get(model)
