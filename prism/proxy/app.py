@@ -19,7 +19,13 @@ async def lifespan(app: FastAPI):
     from prism.observe.request_log import RequestLogger
     from prism.resilience.circuit_breaker import CircuitBreakerRegistry
     from prism.routing.router import Router
-    from prism_cloud.scanner import SecurityScanner
+
+    # Cloud features (optional — requires prism-gateway-cloud package)
+    try:
+        from prism_cloud.scanner import SecurityScanner
+        scanner = SecurityScanner()
+    except ImportError:
+        scanner = None
 
     cfg: PrismConfig = app.state.config
 
@@ -28,7 +34,7 @@ async def lifespan(app: FastAPI):
     app.state.cache = CacheStore(cfg.cache)
     app.state.keys = KeyManager(cfg)
     app.state.metrics = MetricsCollector()
-    app.state.scanner = SecurityScanner()
+    app.state.scanner = scanner
     app.state.request_log = RequestLogger(max_entries=10_000)
 
     # Register providers with circuit breakers

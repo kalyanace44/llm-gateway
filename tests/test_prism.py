@@ -380,6 +380,7 @@ class TestChatEndpoint:
 
     def test_pii_blocked(self, client):
         """PII containing prompt injection is blocked by scanner."""
+        pytest.importorskip("prism_cloud")
         client.post("/admin/keys",
             headers={"Authorization": "Bearer admin-secret"},
             json={"key": "scan-test", "name": "test"})
@@ -393,6 +394,7 @@ class TestChatEndpoint:
 
     def test_pii_redacted(self, client):
         """PII is redacted before forwarding."""
+        pytest.importorskip("prism_cloud")
         client.post("/admin/keys",
             headers={"Authorization": "Bearer admin-secret"},
             json={"key": "redact-test", "name": "test"})
