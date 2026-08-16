@@ -118,6 +118,43 @@ class PolicyRule:
 
 
 @dataclass
+class CustomEntity:
+    """User-defined entity pattern."""
+    name: str
+    pattern: str
+    category: EntityCategory = EntityCategory.PERSONAL_ID
+    severity: Severity = Severity.HIGH
+    confidence: float = 0.8
+    action: ScanAction = ScanAction.REDACT
+    description: str = ""
+    frameworks: list[ComplianceFramework] = field(default_factory=lambda: [ComplianceFramework.CUSTOM])
+
+
+@dataclass
+class CustomSecret:
+    """User-defined secret/credential pattern."""
+    name: str
+    pattern: str
+    severity: Severity = Severity.CRITICAL
+    confidence: float = 0.9
+    action: ScanAction = ScanAction.BLOCK
+    description: str = ""
+    # Entropy threshold — if set, only match when string entropy exceeds this
+    min_entropy: float = 0.0
+
+
+@dataclass
+class CustomInjection:
+    """User-defined injection pattern."""
+    name: str
+    pattern: str
+    severity: Severity = Severity.HIGH
+    confidence: float = 0.8
+    action: ScanAction = ScanAction.BLOCK
+    description: str = ""
+
+
+@dataclass
 class ScannerConfig:
     """Scanner configuration — drives the entire policy engine."""
     enabled: bool = True
@@ -135,7 +172,11 @@ class ScannerConfig:
     })
     # Override actions for specific entity types
     entity_overrides: dict[str, ScanAction] = field(default_factory=dict)
-    # Custom regex patterns
+    # Custom user-defined rules
+    custom_entities: list[CustomEntity] = field(default_factory=list)
+    custom_secrets: list[CustomSecret] = field(default_factory=list)
+    custom_injections: list[CustomInjection] = field(default_factory=list)
+    # Legacy: raw dict patterns (deprecated, use typed classes above)
     custom_patterns: list[dict] = field(default_factory=list)
     # Whether to include matched text in audit log
     audit_matched_text: bool = False
@@ -149,6 +190,122 @@ class ScannerConfig:
     # Secrets detection
     secrets_enabled: bool = True
     secrets_action: ScanAction = ScanAction.BLOCK
+
+    @classmethod
+    def from_yaml(cls, yaml_dict: dict) -> ScannerConfig:
+        r"""Load scanner config from YAML dict (e.g. prism.yaml 'scanner' section).
+
+        Example YAML:
+            scanner:
+              enabled: true
+              frameworks: [pci_dss, gdpr, hipaa, dpdp]
+              min_confidence: 0.6
+              severity_actions:
+                critical: block
+                high: redact
+              custom_entities:
+                - name: employee_id
+                  pattern: 'EMP-\d{6}'
+                  severity: high
+                  action: redact
+                  description: Internal employee ID
+                - name: internal_project
+                  pattern: 'PRJ-[A-Z]{2}-\d{4}'
+                  severity: medium
+                  action: warn
+              custom_secrets:
+                - name: internal_api_token
+                  pattern: 'tok_[a-zA-Z0-9]{32}'
+                  description: Our internal service tokens
+                  min_entropy: 3.5
+                - name: database_password
+                  pattern: 'DB_PASS=[^\s]+'
+                  severity: critical
+              custom_injections:
+                - name: competitor_extraction
+                  pattern: 'list all (customers|users|accounts)'
+                  severity: high
+                  description: Attempt to extract user lists
+              entity_overrides:
+                email: warn
+                ip_address: audit
+        """
+        config = cls()
+
+        if "enabled" in yaml_dict:
+            config.enabled = yaml_dict["enabled"]
+        if "min_confidence" in yaml_dict:
+            config.min_confidence = yaml_dict["min_confidence"]
+        if "environment" in yaml_dict:
+            config.environment = yaml_dict["environment"]
+        if "audit_matched_text" in yaml_dict:
+            config.audit_matched_text = yaml_dict["audit_matched_text"]
+        if "injection_enabled" in yaml_dict:
+            config.injection_enabled = yaml_dict["injection_enabled"]
+        if "secrets_enabled" in yaml_dict:
+            config.secrets_enabled = yaml_dict["secrets_enabled"]
+
+        # Frameworks
+        if "frameworks" in yaml_dict:
+            config.frameworks = [
+                ComplianceFramework(f) for f in yaml_dict["frameworks"]
+            ]
+
+        # Severity actions
+        if "severity_actions" in yaml_dict:
+            config.severity_actions = {
+                k: ScanAction(v) for k, v in yaml_dict["severity_actions"].items()
+            }
+
+        # Entity overrides
+        if "entity_overrides" in yaml_dict:
+            config.entity_overrides = {
+                k: ScanAction(v) for k, v in yaml_dict["entity_overrides"].items()
+            }
+
+        # Injection/secrets actions
+        if "injection_action" in yaml_dict:
+            config.injection_action = ScanAction(yaml_dict["injection_action"])
+        if "secrets_action" in yaml_dict:
+            config.secrets_action = ScanAction(yaml_dict["secrets_action"])
+
+        # Custom entities
+        for entity in yaml_dict.get("custom_entities", []):
+            config.custom_entities.append(CustomEntity(
+                name=entity["name"],
+                pattern=entity["pattern"],
+                category=EntityCategory(entity.get("category", "personal_id")),
+                severity=Severity(entity.get("severity", "high")),
+                confidence=entity.get("confidence", 0.8),
+                action=ScanAction(entity.get("action", "redact")),
+                description=entity.get("description", ""),
+                frameworks=[ComplianceFramework(f) for f in entity.get("frameworks", ["custom"])],
+            ))
+
+        # Custom secrets
+        for secret in yaml_dict.get("custom_secrets", []):
+            config.custom_secrets.append(CustomSecret(
+                name=secret["name"],
+                pattern=secret["pattern"],
+                severity=Severity(secret.get("severity", "critical")),
+                confidence=secret.get("confidence", 0.9),
+                action=ScanAction(secret.get("action", "block")),
+                description=secret.get("description", ""),
+                min_entropy=secret.get("min_entropy", 0.0),
+            ))
+
+        # Custom injections
+        for inj in yaml_dict.get("custom_injections", []):
+            config.custom_injections.append(CustomInjection(
+                name=inj["name"],
+                pattern=inj["pattern"],
+                severity=Severity(inj.get("severity", "high")),
+                confidence=inj.get("confidence", 0.8),
+                action=ScanAction(inj.get("action", "block")),
+                description=inj.get("description", ""),
+            ))
+
+        return config
 
 
 # ─── Entity Definitions ───────────────────────────────────────────────────────
@@ -607,10 +764,42 @@ class SecurityScanner:
                     (re.compile(inj["pattern"], re.IGNORECASE), inj)
                 )
 
-        # Custom patterns
+        # Legacy custom patterns (deprecated)
         for custom in self.config.custom_patterns:
             self._compiled_entities[custom["name"]] = re.compile(
                 custom["pattern"], re.IGNORECASE
+            )
+
+        # Typed custom entities
+        for entity in self.config.custom_entities:
+            ENTITY_REGISTRY[entity.name] = {
+                "pattern": entity.pattern,
+                "category": entity.category,
+                "severity": entity.severity,
+                "confidence": entity.confidence,
+                "frameworks": entity.frameworks,
+            }
+            self._compiled_entities[entity.name] = re.compile(entity.pattern, re.IGNORECASE)
+
+        # Typed custom secrets
+        for secret in self.config.custom_secrets:
+            SECRETS_PATTERNS[secret.name] = {
+                "pattern": secret.pattern,
+                "severity": secret.severity,
+                "confidence": secret.confidence,
+                "min_entropy": secret.min_entropy,
+            }
+            self._compiled_secrets[secret.name] = re.compile(secret.pattern)
+
+        # Typed custom injections
+        for inj in self.config.custom_injections:
+            inj_def = {
+                "pattern": inj.pattern,
+                "severity": inj.severity,
+                "confidence": inj.confidence,
+            }
+            self._compiled_injections.append(
+                (re.compile(inj.pattern, re.IGNORECASE), inj_def)
             )
 
     def scan(self, content: str) -> ScanResult:
@@ -734,9 +923,16 @@ class SecurityScanner:
             secret_def = SECRETS_PATTERNS[name]
             for match in pattern.finditer(content):
                 confidence = secret_def["confidence"]
+                matched_text = match.group()
+
+                # Check min_entropy threshold (custom secrets can require high entropy)
+                min_entropy = secret_def.get("min_entropy", 0.0)
+                entropy = _shannon_entropy(matched_text)
+                if min_entropy > 0 and entropy < min_entropy:
+                    continue  # Skip low-entropy matches
+
                 # Boost confidence with entropy check for low-confidence patterns
                 if confidence < 0.7:
-                    entropy = _shannon_entropy(match.group())
                     if entropy > 4.0:
                         confidence = min(confidence + 0.3, 0.95)
                     else:
@@ -749,7 +945,7 @@ class SecurityScanner:
                     confidence=confidence,
                     start=match.start(),
                     end=match.end(),
-                    matched_text=match.group(),
+                    matched_text=matched_text,
                     frameworks=[ComplianceFramework.SOC2, ComplianceFramework.NIST],
                 ))
         return findings
